@@ -1,0 +1,9 @@
+# Resource control policy requiring specific storage class in tagged S3 buckets
+# github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering
+# GPLv3, Copyright Paul Marcelin
+
+enable=quote-safe-variables
+enable=require-variable-braces
+enable=avoid-negated-conditions
+enable=avoid-nullary-conditions
+enable=useless-use-of-cat
