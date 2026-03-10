@@ -147,22 +147,21 @@ Parameters:
     Type: String
     Description: >-
       One or more condition expressions determining which roles (or other IAM
-      principals) are still allowed to set/change/remove the designated S3
-      bucket tags and enable/disable ABAC, for buckets in AWS accounts subject
-      to the SCP. Separate multiple elements with a comma.
+      principals) are not allowed to set/change/remove the designated S3 bucket
+      tags or enable/disable ABAC, for buckets in AWS accounts subject to the
+      SCP. Separate multiple expressions with commas.
       The default,
       '"ArnNotLike": { "aws:PrincipalArn": "arn:aws:iam::*:role/manage-s3" }',
-      means that requests to change ABAC or the designated tags are denied
-      unless made by the manage-s3 role. (Separately, you would have to grant
-      the manage-s3 role permission to read and change S3 bucket properties
-      like tags and ABAC.)
+      means that a request to change ABAC or the designated tags will be denied
+      if it is not made by the manage-s3 role. (Separately, you would have
+      to allow the manage-s3 role to read and change S3 bucket tags and ABAC.)
       To avoid generating the SCP, leave this blank.
       "Null", "ForAnyValue:StringEquals" and "ForAllValues:StringNotEquals" are
       forbidden; to use these condition operators, write a custom policy.
+      For condition operators, see
+      https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html
       For condition keys, see
       https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-principal-properties
-      . For operators, see
-      https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html
     Default: '"ArnNotLike": { "aws:PrincipalArn": "arn:aws:iam::*:role/manage-s3" }'
     AllowedPattern: '^(?!.*"(Null|ForAnyValue:StringEquals|ForAllValues:StringNotEquals)").*$'
     ConstraintDescription: >-
@@ -211,7 +210,7 @@ Metadata:
       EnableRcp:
         default: Enable RCP?
       RcpTargetIds:
-        default: RCP Root IDs, OU IDs, and/or AWS account ID numbers
+        default: RCP root IDs, OU IDs, and/or AWS account ID numbers
       PlaceholderAdvancedParameters:
         default: Do not change the parameters below unless necessary!
       RequireS3StorageClass:
@@ -225,9 +224,9 @@ Metadata:
       EnableScp:
         default: Enable SCP?
       ScpTargetIds:
-        default: SCP Root IDs, OU IDs, and/or AWS account ID numbers
+        default: SCP root IDs, OU IDs, and/or AWS account ID numbers
       ScpPrincipalCondition:
-        default: Condition for IAM roles allowed to change S3 bucket tags, ABAC
+        default: Condition for roles not allowed to change S3 bucket tags, ABAC
 
 Rules:
 
@@ -267,13 +266,14 @@ Resources:
         - Key: Source
           Value: "github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering"
         - Key: Rights
-          Value: "GPLv3. Copyright Paul Marcelin."
+          Value: "GPLv3, Copyright Paul Marcelin"
       Description: !Sub >-
         S3 bucket tagged "${S3BucketTagKeyStrict}": Require that all objects
-        be created in the ${RequireS3StorageClass} storage class. ABAC must be
-        enabled for the bucket. Bucket tagged "${S3BucketTagKeyPermissive}":
-        Override by tagging an object "${S3ObjectTagKeyOverrideBucketTag}" on
-        creation. GPLv3. Copyright Paul Marcelin ( github.com/sqlxpert ).
+        be created in ${RequireS3StorageClass} storage class. ABAC must be
+        enabled for the bucket.
+        Bucket tagged "${S3BucketTagKeyPermissive}": Override by tagging an
+        object "${S3ObjectTagKeyOverrideBucketTag}" on creation.
+        GPLv3, Copyright Paul Marcelin. github.com/sqlxpert
       TargetIds: !If
         - EnableRcpTrue
         - [ !Ref RcpTargetIds ]
@@ -331,13 +331,13 @@ Resources:
         - Key: Source
           Value: "github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering"
         - Key: Rights
-          Value: "GPLv3. Copyright Paul Marcelin."
+          Value: "GPLv3, Copyright Paul Marcelin"
       Description: !Sub >-
-        S3 bucket: Only principals matching "${ScpPrincipalCondition}" can
-        set/change/remove "${S3BucketTagKeyStrict}" and
-        "${S3BucketTagKeyPermissive}" bucket tags and enable/disable ABAC. Tag
-        permissions vary based on ABAC status; see statement IDs. GPLv3.
-        Copyright Paul Marcelin ( github.com/sqlxpert ).
+        S3 bucket: Matching IAM principals cannot set/change/remove
+        "${S3BucketTagKeyStrict}" or "${S3BucketTagKeyPermissive}" bucket tags,
+        or enable/disable ABAC. Applicable tag permissions vary based on ABAC
+        status; see statement IDs.
+        GPLv3, Copyright Paul Marcelin. github.com/sqlxpert
       TargetIds: !If
         - EnableScpTrue
         - [ !Ref ScpTargetIds ]
@@ -465,7 +465,7 @@ Resources:
           }
         - CommaAfterScpPrincipalCondition:
             !If [ ScpPrincipalConditionNotBlank, ",", "" ]
-            # cfn-lint W1028: False can indeed never occur, because !If
+            # cfn-lint W1028: false can indeed never occur, because !If
             # references the same condition that determines whether the
             # resource is created (see Condition: above). Nevertheless, I want
             # the Content property to contain valid JSON at all times, because
