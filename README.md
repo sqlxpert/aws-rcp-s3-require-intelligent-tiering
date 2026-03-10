@@ -1,8 +1,6 @@
 # Require S3 Intelligent Tiering!
 
-_Enforce use of Intelligent Tiering by tagging S3 buckets_
-
----
+_Enforce Intelligent Tiering by tagging S3 buckets..._
 
 Still relying on a lifecycle policy to transition S3 objects to
 [Intelligent Tiering](https://aws.amazon.com/s3/storage-classes/intelligent-tiering)
@@ -32,8 +30,8 @@ RCP throughout your organization, because it doesn't affect existing buckets.
 ### Strict Bucket Tag
 
 To require Intelligent Tiering for all new objects, tag an S3 bucket with
-`cost-s3-require-storage-class-intelligent-tiering` (you can customize the tag)
-and enable
+`cost-s3-require-storage-class-intelligent-tiering` (you can customize the tag
+key; the tag value is ignored) and enable
 [attribute-based access control](https://aws.amazon.com/blogs/aws/introducing-attribute-based-access-control-for-amazon-s3-general-purpose-buckets)
 for the bucket.
 
@@ -48,8 +46,7 @@ Users who forget to...
 ...will receive an `AccessDenied` error with the message "explicit deny in a
 resource control policy". Users can't see RCPs, but they can see
 "require-storage-class-intelligent-tiering" in the bucket tag. If they miss
-that, the RCP hint in the error message tells an administrator exactly where to
-look.
+that, the RCP hint in the error message tells an administrator where to look.
 
 Pretty soon, setting the storage class will be second-nature.
 
@@ -58,10 +55,10 @@ Pretty soon, setting the storage class will be second-nature.
 To require Intelligent Tiering but let users override the requirement, tag an
 S3 bucket with
 `cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`
-(again you can customize this) and enable ABAC for the bucket.
+(again customizable) and enable ABAC for the bucket.
 
 A user can set any storage class (or omit the storage class, for `STANDARD`) by
-setting the `cost-s3-override-storage-class-intelligent-tiering` object tag
+setting the `cost-s3-override-storage-class-intelligent-tiering` _object tag_
 when creating an object. Add:
 
 - `--tagging 'cost-s3-override-storage-class-intelligent-tiering='`<br/>when
@@ -71,8 +68,15 @@ when creating an object. Add:
 - `x-amz-tagging: cost-s3-override-storage-class-intelligent-tiering=`<br/>
   (Encode `=` as `%3D` if your HTTP library doesn't.)
 
-Unfortunately, `aws s3 cp` does not support object tags as of March,&nbsp;2026.
-AWS CLI users must use `aws s3api put-object` instead.
+#### Permissive Bucket Tag Notes
+
+- `aws s3 cp` does not support object tags as of March,&nbsp;2026. To set an
+  object tag when creating an object, AWS CLI users must run
+  `aws s3api put-object` instead.
+- If for some reason you add both bucket tags to a bucket, the permissive one
+  wins. Overriding with an object tag will work.
+- Be sure to specify the override tag in the request every time you overwrite
+  an object or create a new version.
 
 ## How It Works
 
