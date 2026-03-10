@@ -162,7 +162,7 @@ November,&nbsp;2025!
     |:---|:---:|:---:|:---:|
     |**Tag object** &rarr;|No|No|`cost-s3-override-storage-class-intelligent-tiering`|
     |&darr; **Tag bucket**||||
-    |No|&check;|&check;||
+    |No|&check;|&check;|&check;|
     |`cost-s3-require-storage-class-intelligent-tiering`|&cross;|&check;|&cross;|
     |`cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`|&cross;|&check;|&check;|
 
@@ -185,13 +185,7 @@ November,&nbsp;2025!
 
     ```shell
     aws s3 cp test.txt "s3://${S3_BUCKET_NAME}"
-    ```
-
-    ```shell
     aws s3 cp test.txt "s3://${S3_BUCKET_NAME}" --storage-class INTELLIGENT_TIERING
-    ```
-
-    ```shell
     aws s3api put-object --body test.txt --bucket "${S3_BUCKET_NAME}" --key test.txt --tagging 'cost-s3-override-storage-class-intelligent-tiering='
     ```
 
