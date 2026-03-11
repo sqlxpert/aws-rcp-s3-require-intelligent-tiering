@@ -167,7 +167,7 @@ and 2025.
         source = "git::https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git//terraform?ref=v1.0.0"
         # Reference a specific version from github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering/releases
 
-        rcp_target_ids = [ "112233445566", "ou-abcd-efghijkl", ]
+        rcp_target_ids = ["112233445566", "ou-abcd-efghijkl",]
       }
       ```
 

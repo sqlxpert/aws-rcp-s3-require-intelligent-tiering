@@ -17,7 +17,7 @@ variable "enable_rcp" {
 }
 
 variable "rcp_target_ids" {
-  type        = array(string)
+  type        = list(string)
   description = "Up to 100 r- root ID strings, ou- organizational unit ID strings, and/or AWS account ID numbers to which the RCP will apply. To view the RCP before applying it leave this empty, or start with enable_rcp set to false . Exercise caution when applying any RCP, but note that this RCP generally does not affect pre-existing S3 buckets; it only affects S3 buckets with designated tags."
 
   default = []
@@ -85,7 +85,7 @@ variable "enable_scp" {
 }
 
 variable "scp_target_ids" {
-  type        = array(string)
+  type        = list(string)
   description = "Up to 100 r- root ID strings, ou- organizational unit ID strings, and/or AWS account ID numbers to which the SCP (if generated) will apply. You may wish to apply the SCP, which restricts S3 bucket tag and ABAC changes, to a target before applying the RCP, which actually enforces the required storage class in tagged buckets. In some organizational units, you might want the benefit of the RCP but give all users control over S3 bucket tags and ABAC by not applying the SCP. To view the SCP before applying it, leave this empty, or start with enable_scp set to false . Exercise caution when applying this SCP, because it generally does reduce existing permissions."
 
   default = []
