@@ -204,12 +204,11 @@ and 2025.
     select each bucket in turn, open the "Properties" tab, and scroll down to
     "Bucket ABAC". Click "Edit" and enable ABAC.
 
- 7. Test the RCP by creating objects in the indicated storage classes, with and
-    without the override tag.
+ 7. Test the RCP by creating objects in the buckets:
 
-    |**Step&nbsp;7: Create objects in these storage classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
+    |**Step&nbsp;7: Create objects in these classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
     |:---|:---:|:---:|:---:|
-    |**Tag the objects &rarr;**|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
+    |**Step&nbsp;7: Tag the objects &rarr;**|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
     |**&darr; Step&nbsp;5: Tag the buckets**||||
     |_No bucket tag_|&check;|&check;|&check;|
     |`cost-s3-require-storage-class-intelligent-tiering`|&cross;|&check;|&cross;|
