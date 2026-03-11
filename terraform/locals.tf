@@ -20,6 +20,6 @@ locals {
     local.generate_scp && var.enable_scp && (length(var.scp_target_ids) > 0)
   )
 
-  apply_rcp_target_ids_set = set(local.apply_rcp ? var.rcp_target_ids : [])
-  apply_scp_target_ids_set = set(local.apply_scp ? var.scp_target_ids : [])
+  apply_rcp_target_ids_set = toset(local.apply_rcp ? var.rcp_target_ids : [])
+  apply_scp_target_ids_set = toset(local.apply_scp ? var.scp_target_ids : [])
 }

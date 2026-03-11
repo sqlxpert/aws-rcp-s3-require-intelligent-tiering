@@ -55,7 +55,7 @@ resource "aws_organizations_policy" "rcp_s3_bucket_require_storage_class" {
 }
 
 resource "aws_organizations_policy_attachment" "rcp_s3_bucket_require_storage_class" {
-  for_each = var.apply_rcp_target_ids_set
+  for_each = local.apply_rcp_target_ids_set
 
   policy_id = aws_organizations_policy.rcp_s3_bucket_require_storage_class.id
   target_id = each.key
