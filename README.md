@@ -207,10 +207,10 @@ and 2025.
  7. Test the RCP by creating objects in the indicated storage classes, with and
     without the override tag.
 
-    |**Create an object in this storage class** &rarr;|Standard|Intelligent&nbsp;Tiering|Standard|
+    |**Step&nbsp;7: Create objects in these storage classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
     |:---|:---:|:---:|:---:|
-    |**Tag the object** &rarr;|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
-    |&darr; **Tag the bucket**||||
+    |**Tag the objects &rarr;**|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
+    |**&darr; Step&nbsp;5: Tag the buckets**||||
     |_No bucket tag_|&check;|&check;|&check;|
     |`cost-s3-require-storage-class-intelligent-tiering`|&cross;|&check;|&cross;|
     |`cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`|&cross;|&check;|&check;|
