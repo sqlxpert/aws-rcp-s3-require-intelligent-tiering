@@ -40,6 +40,21 @@ Users who forget to add...
 "require-storage-class"... in the bucket tag, the error message tells an
 administrator where to look: "explicit deny in a resource control policy".
 
+<details>
+  <summary>See the complete error message</summary>
+
+<br/>
+
+```text
+An error occurred (AccessDenied) when calling the PutObject operation:
+User: arn:aws:sts::112233445566:assumed-role/AWSReservedSSO_PermSetName_0123456789abcdef/abcde
+is not authorized to perform: s3:PutObject
+on resource: "arn:aws:s3:::test-intelligent-tiering-class-only/standard.txt"
+with an explicit deny in a resource control policy
+```
+
+</details>
+
 Jump to:
 [Installation](#installation)
 &bull;
@@ -192,9 +207,9 @@ and 2025.
 
  4. If you're advanced user, see
     [Testing](#testing),
-    below, for test scripts and then return to Step&nbsp;9.
+    below, for test scripts. After testing, return to Step&nbsp;9.
 
-    Otherwise, continue with simple, manual testing.
+    Otherwise, continue with manual testing.
 
  5. [Create](https://console.aws.amazon.com/s3/bucket/create)
     three "general purpose" S3 buckets. Apply tags from the left column of the
@@ -206,7 +221,9 @@ and 2025.
     select each bucket in turn, open the "Properties" tab, and scroll down to
     "Bucket ABAC". Click "Edit" and enable ABAC.
 
- 7. Try to create three objects in each of the three buckets:
+ 7. Try to create three objects in each of the three buckets. Combinations
+    marked &check; should succeed, and ones marked &cross; should produce the
+    "AccessDenied" error.
 
     |**Step&nbsp;7: Create objects in these classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
     |:---|:---:|:---:|:---:|
