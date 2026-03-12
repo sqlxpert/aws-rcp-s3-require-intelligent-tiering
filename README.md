@@ -313,17 +313,24 @@ and 2025.
   storage class (or the `cost-s3-override-storage-class-intelligent-tiering`
   object tag, if the bucket tag is
   `cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`&nbsp;).
-- If _both_
-  `cost-s3-require-storage-class-intelligent-tiering` and
-  `cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`
+- If _both_<br/>
+  `cost-s3-require-storage-class-intelligent-tiering` and<br/>
+  `cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`<br/>
   are applied to the same bucket, the strict bucket tag loses and the
   permissive bucket tag wins; users can override the required storage class
   by setting the `cost-s3-override-storage-class-intelligent-tiering` _object
   tag_. This interpretation avoids contradicting what users can see:
   "-override-with-object-tag" in one of the bucket's two tags.
-- The RCP forbids applying `cost-s3-override-storage-class-intelligent-tiering`
-  to any _bucket_ with attribute-based access control enabled. This tag is
-  meant for objects. On a bucket, it could cause confusion.
+- To prevent confusion, the RCP forbids applying
+  `cost-s3-override-storage-class-intelligent-tiering` to any bucket with
+  attribute-based access control enabled. This tag is meant for objects. It has
+  no effect on a bucket.
+
+<details>
+  <summary>Resource control policy technical details...</summary>
+
+<br/>
+
 - The resource control policy regulates only the _initial_ storage class.
   Lifecycle transition rules may later transition an object or object version
   to a different storage class.
@@ -335,6 +342,8 @@ and 2025.
   level in the organizational hierarchy.
 - RCPs do not affect resources, such as S3 buckets, in the
   AWS&nbsp;Organizations management account.
+
+</details>
 
 ### Custom Tag Keys
 
@@ -385,8 +394,8 @@ Test the SCP before applying it, because it generally reduces existing S3
 permissions. Human users or automated processes might rely on those
 permissions.
 
-You will need at least one exempt role in every account, to manage S3 buckets.
-I recommend
+You will need at least one SCP-exempt role in every account, to manage S3
+buckets. I recommend
 [IAM Identity Center permission sets](https://docs.aws.amazon.com/singlesignon/latest/userguide/permissionsets.html).
 You can customize `ScpPrincipalCondition` / `scp_principal_condition` to
 [reference permission set roles](https://docs.aws.amazon.com/singlesignon/latest/userguide/referencingpermissionsets.html).
