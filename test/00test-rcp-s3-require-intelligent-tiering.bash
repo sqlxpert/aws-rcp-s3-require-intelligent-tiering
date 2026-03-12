@@ -140,7 +140,7 @@ aws s3api create-bucket --bucket "${s3_bucket_name}" \
   --create-bucket-configuration "LocationConstraint=${AWS_REGION}" \
   --query 'BucketArn' --output text
 aws s3api put-object \
-  --body input.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
+  --body test.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
   --storage-class 'STANDARD' --tagging "${s3_object_tag_key_override_bucket_tag}=" \
   --query 'ETag' --output text
 aws s3 rm "${s3_object_uri}"
@@ -174,7 +174,7 @@ if ! aws s3api create-bucket --bucket "${s3_bucket_name}" \
 fi
 set -o errexit
 aws s3api put-bucket-abac --bucket "${s3_bucket_name}" --abac-status 'Status=Enabled'
-if aws s3 cp input.txt "${s3_object_uri}" --storage-class 'STANDARD'; then
+if aws s3 cp test.txt "${s3_object_uri}" --storage-class 'STANDARD'; then
   set +o xtrace
   printf '\n'
   printf 'CANNOT CONTINUE RCP TESTING. Make sure that the\n'
@@ -253,7 +253,7 @@ printf '========================================================================
 printf '\n'
 s3_object_uri="s3://${s3_bucket_name_prefix}-no-tags/standard.txt"
 set -o xtrace
-aws s3 cp input.txt "${s3_object_uri}"
+aws s3 cp test.txt "${s3_object_uri}"
 aws s3 rm "${s3_object_uri}"
 set +o xtrace
 
@@ -264,7 +264,7 @@ printf 'T02 Create and delete a STANDARD-class object in the no-tags bucket\n'
 printf '==============================================================================\n'
 printf '\n'
 set -o xtrace
-aws s3 cp input.txt "${s3_object_uri}" --storage-class 'STANDARD'
+aws s3 cp test.txt "${s3_object_uri}" --storage-class 'STANDARD'
 aws s3 rm "${s3_object_uri}"
 set +o xtrace
 
@@ -279,7 +279,7 @@ do
   s3_object_uri="s3://${s3_bucket_name_prefix}-${s3_bucket_name_suffix}/other.txt"
   printf '\n'
   set -o xtrace
-  aws s3 cp input.txt "${s3_object_uri}" --storage-class "${s3_storage_class}"
+  aws s3 cp test.txt "${s3_object_uri}" --storage-class "${s3_storage_class}"
   aws s3 rm "${s3_object_uri}"
   set +o xtrace
 done
@@ -303,7 +303,7 @@ do
   for put_count in {1..2}
   do
     aws s3api put-object \
-      --body input.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
+      --body test.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
       --storage-class 'STANDARD' --tagging "${s3_object_tag_key_override_bucket_tag}=" \
       --query 'ETag' --output text
   done
@@ -325,7 +325,7 @@ do
   s3_object_uri="s3://${s3_bucket_name_prefix}-${s3_bucket_name_suffix}/standard.txt"
   printf '\n'
   set -o xtrace
-  aws s3 cp input.txt "${s3_object_uri}" --storage-class 'STANDARD'
+  aws s3 cp test.txt "${s3_object_uri}" --storage-class 'STANDARD'
   aws s3 rm "${s3_object_uri}"
   set +o xtrace
 done
@@ -342,7 +342,7 @@ s3_object_key='standard.txt'
 s3_object_uri="s3://${s3_bucket_name}/${s3_object_key}"
 set -o xtrace
 aws s3api put-object \
-  --body input.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
+  --body test.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
   --storage-class 'STANDARD' --tagging "${s3_object_tag_key_override_bucket_tag}=" \
   --query 'ETag' --output text
 aws s3 rm "${s3_object_uri}"
@@ -361,7 +361,7 @@ s3_bucket_name="${s3_bucket_name_prefix}-override-tag"
 s3_object_key='other.txt'
 s3_object_uri="s3://${s3_bucket_name}/${s3_object_key}"
 set -o xtrace
-aws s3 cp input.txt "${s3_object_uri}" --storage-class 'STANDARD'
+aws s3 cp test.txt "${s3_object_uri}" --storage-class 'STANDARD'
 set +o xtrace
 
 

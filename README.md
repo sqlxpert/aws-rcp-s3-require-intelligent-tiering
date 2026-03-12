@@ -212,7 +212,7 @@ and 2025.
       Add the following child module to your existing root module:
 
       ```terraform
-      module "rcp_s3_require_intelligent_tiering" {
+      module "s3_require_intelligent_tiering" {
         source = "git::https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git//terraform?ref=v1.0.0"
         # Reference a specific version from github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering/releases
 
