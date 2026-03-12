@@ -596,7 +596,7 @@ To test the SCP,
 10. In the list of
     [buckets](https://console.aws.amazon.com/s3/buckets),
     select the first test bucket. The test bucket name prefix is of the form:
-    deletable-acct-_112233445566_-dt-_YYYY-MM-DD_-no-tags and the first test
+    deletable-acct-_112233445566_-dt-_YYYY-MM-DD_ and the first test
     bucket's name ends in:
 
     - `-no-tags`
