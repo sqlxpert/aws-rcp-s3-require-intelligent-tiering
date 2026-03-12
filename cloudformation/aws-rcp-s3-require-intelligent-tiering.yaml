@@ -164,20 +164,21 @@ Parameters:
       The default,
       '"ArnNotLike": { "aws:PrincipalArn": "arn:aws:iam::*:role/manage-s3" }',
       means that a request to change ABAC or the designated tags will be denied
-      if it is not made by the manage-s3 role. (Separately, you would have
-      to allow the manage-s3 role to read and change S3 bucket tags and ABAC.)
+      if it is not made by the manage-s3 role. (Separately, you would have to
+      create the manage-s3 role and attach an IAM policy allowing the role to
+      read and change S3 bucket tags and ABAC.)
       To avoid generating the SCP, leave this blank.
-      "Null", "ForAnyValue:StringEquals" and "ForAllValues:StringNotEquals" are
-      forbidden; to use these condition operators, write a custom policy.
+      "ForAnyValue:StringEquals" is forbidden; to use this condition operator,
+      write a custom policy.
       For condition operators, see
       https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html
       . For condition keys, see
       https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-principal-properties
     Default: '"ArnNotLike": { "aws:PrincipalArn": "arn:aws:iam::*:role/manage-s3" }'
-    AllowedPattern: '^(?!.*"(Null|ForAnyValue:StringEquals|ForAllValues:StringNotEquals)").*$'
+    AllowedPattern: '^(?!.*"ForAnyValue:StringEquals").*$'
     ConstraintDescription: >-
-      "Null", "ForAnyValue:StringEquals" and "ForAllValues:StringNotEquals" are
-      forbidden. To use these condition operators, write a custom policy.
+      "ForAnyValue:StringEquals" is forbidden. To use this condition operator,
+      write a custom policy.
 
 Metadata:
 
@@ -341,10 +342,9 @@ Resources:
         - Key: Rights
           Value: "GPLv3. Copyright Paul Marcelin."
       Description: !Sub >-
-        S3 bucket: Matching IAM principals cannot set/change/remove
-        '${S3BucketTagKeyStrict}' or '${S3BucketTagKeyPermissive}' bucket tags,
-        or enable/disable ABAC. Applicable tag permissions vary based on ABAC
-        status; see statement IDs.
+        S3 bucket: Matching IAM principals cannot enable/disable ABAC. If ABAC
+        is enabled, they cannot add/change/remove '${S3BucketTagKeyStrict}' or
+        '${S3BucketTagKeyPermissive}' bucket tags.
         GPLv3, Copyright Paul Marcelin. github.com/sqlxpert
       TargetIds: !If [ EnableScpTrue, !Ref ScpTargetIds, !Ref AWS::NoValue ]
 
@@ -362,19 +362,6 @@ Resources:
       #
       # https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html
       # https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazons3.html#amazons3-s3_BucketTag___TagKey_
-      #
-      # ForAllValues:OPERATOR is obviously true if every value of a
-      # multi-valued condition key matches, but it is also true if the key does
-      # not exist. ForAllValues:StringNotEquals is used to prevent deletion of
-      # a bucket tag with s3:PutBucketTagging (existing s3:BucketTag/TAG_KEY
-      # not re-stated in aws:TagKeys). The "Null": false check to confirm the
-      # existence of a condition key is for s3:BucketTag/TAG_KEY, not
-      # aws:TagKeys. If all of a bucket's existing tags were about to be
-      # deleted, aws:TagKeys would not exist in the request (or it would be
-      # null or empty), the ForAllValues:StringNotEquals condition would be
-      # true, and all conditions for Denying the deletion request would be met.
-      #
-      # https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-single-vs-multi-valued-context-keys.html#reference_policies_condition-forallvalues
       Content: !Sub
         - >-
           {
@@ -403,66 +390,6 @@ Resources:
                       "${S3BucketTagKeyStrict}",
                       "${S3BucketTagKeyPermissive}"
                     ]
-                  }
-                }
-              },
-              {
-                "Sid": "CannotAddTag1BucketAbacDisabled",
-                "Effect": "Deny",
-                "Action": "s3:PutBucketTagging",
-                "Resource": "*",
-                "Condition": {
-                  ${ScpPrincipalCondition}${CommaAfterScpPrincipalCondition}
-                  "Null": {
-                    "s3:BucketTag/${S3BucketTagKeyStrict}": "true"
-                  },
-                  "ForAnyValue:StringEquals": {
-                    "aws:TagKeys": "${S3BucketTagKeyStrict}"
-                  }
-                }
-              },
-              {
-                "Sid": "CannotAddTag2BucketAbacDisabled",
-                "Effect": "Deny",
-                "Action": "s3:PutBucketTagging",
-                "Resource": "*",
-                "Condition": {
-                  ${ScpPrincipalCondition}${CommaAfterScpPrincipalCondition}
-                  "Null": {
-                    "s3:BucketTag/${S3BucketTagKeyPermissive}": "true"
-                  },
-                  "ForAnyValue:StringEquals": {
-                    "aws:TagKeys": "${S3BucketTagKeyPermissive}"
-                  }
-                }
-              },
-              {
-                "Sid": "CannotRemoveTag1BucketAbacDisabled",
-                "Effect": "Deny",
-                "Action": "s3:PutBucketTagging",
-                "Resource": "*",
-                "Condition": {
-                  ${ScpPrincipalCondition}${CommaAfterScpPrincipalCondition}
-                  "Null": {
-                    "s3:BucketTag/${S3BucketTagKeyStrict}": "false"
-                  },
-                  "ForAllValues:StringNotEquals": {
-                    "aws:TagKeys": "${S3BucketTagKeyStrict}"
-                  }
-                }
-              },
-              {
-                "Sid": "CannotRemoveTag2BucketAbacDisabled",
-                "Effect": "Deny",
-                "Action": "s3:PutBucketTagging",
-                "Resource": "*",
-                "Condition": {
-                  ${ScpPrincipalCondition}${CommaAfterScpPrincipalCondition}
-                  "Null": {
-                    "s3:BucketTag/${S3BucketTagKeyPermissive}": "false"
-                  },
-                  "ForAllValues:StringNotEquals": {
-                    "aws:TagKeys": "${S3BucketTagKeyPermissive}"
                   }
                 }
               }

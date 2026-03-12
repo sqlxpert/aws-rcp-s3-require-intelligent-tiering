@@ -34,7 +34,7 @@ general_error() {
   exit 1
 }
 
-# Input: s3_object_uri ($1)
+# Input: s3_bucket_uri ($1)
 delete_s3_bucket() {
   set -o xtrace
   aws s3 rb "${1}" --force
@@ -64,7 +64,7 @@ delete_test_s3_buckets_and_exit() {
   printf '\n'
   printf '\n'
   printf '==============================================================================\n'
-  printf 'Delete the 4 test S3 buckets...\n'
+  printf 'Delete the 4 test buckets...\n'
   printf '==============================================================================\n'
   for s3_bucket_name_suffix in 'no-tags' 'tag' 'override-tag' 'both-tags'
   do
@@ -83,7 +83,6 @@ set -o nounset  # Don't allow referencing a variable before setting it
 
 
 printf '\n'
-
 printf '==============================================================================\n'
 printf 'Test aws-rcp-s3-require-intelligent-tiering resource control policy\n'
 printf '\n'
@@ -119,7 +118,7 @@ read -p 'Object override tag key        : ' \
 
 
 
-pause_with_message "The setup steps should succeed unless noted"
+pause_with_message "The setup steps should complete without errors unless noted"
 
 printf '\n'
 printf '\n'
@@ -241,7 +240,7 @@ done
 
 
 
-pause_with_message "The following tests should succeed"
+pause_with_message "The following tests should complete without errors"
 
 trap delete_test_s3_buckets_and_exit INT EXIT
 set +o errexit  # Having checked the basics, continue in spite of errors
@@ -314,7 +313,7 @@ done
 
 
 
-pause_with_message "The following tests should fail unless noted"
+pause_with_message "The following tests should produce errors unless noted"
 
 printf '\n'
 printf '\n'
@@ -367,6 +366,6 @@ set +o xtrace
 
 
 
-pause_with_message "The tear-down steps should succeed"
+pause_with_message "The tear-down steps should complete without errors"
 
 delete_test_s3_buckets_and_exit

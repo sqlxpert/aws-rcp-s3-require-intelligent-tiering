@@ -161,15 +161,33 @@ and 2025.
 
 ## Installation
 
- 1. Log in to the AWS Console, in your management AWS account. Use an
-    administrative role. Choose the region where you manage
-    infrastructure-as-code templates that creates non-regional resources.
+ 1. Authenticate in your AWS&nbsp;Organizations management account. Choose a
+    role with administrative privileges. Choose the region where you manage
+    infrastructure-as-code templates that create non-regional resources.
 
- 2. Install using CloudFormation or Terraform.
+ 2. Review
+    [AWS&nbsp;Organizations Settings](https://console.aws.amazon.com/organizations/v2/home/settings).
+    Make sure that the
+    [all features](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_org_support-all-features.html)
+    feature set is enabled.
+
+    Review
+    [AWS&nbsp;Organizations Policies](https://console.aws.amazon.com/organizations/v2/home/policies).
+    Make sure that...
+
+    - the [resource control policy](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_rcps.html)
+      policy type and
+    - the [service control policy](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html)
+      policy type
+
+    ...are both enabled.
+
+ 3. Install using CloudFormation or Terraform.
 
     - **CloudFormation**<br/>_Easy_ &check;
 
-      [Create a CloudFormation stack](https://console.aws.amazon.com/cloudformation/home?#/stacks/create).
+      In the AWS Console,
+      [create a CloudFormation stack](https://console.aws.amazon.com/cloudformation/home?#/stacks/create).
 
       Select "Upload a template file", then select "Choose file" and navigate
       to a locally-saved copy of
@@ -214,33 +232,35 @@ and 2025.
       terraform apply
       ```
 
- 3. Log in to your test AWS account or an account in your test organizational
-    unit. Use a role with full S3 permissions.
+ 4. Authenticate in your test AWS account or an account in your test
+    organizational unit. (RCPs do not affect resources, such as S3 buckets,
+    created in your AWS&nbsp;Organizations management account.) Choose a role
+    with full S3 permissions.
 
- 4. If you're advanced user, see
+ 5. If you're an advanced user, see
     [Testing](#testing),
-    below, for test scripts. After testing, return to Step&nbsp;9.
+    below, for test scripts. After testing, return to Step&nbsp;10.
 
     Otherwise, continue with manual testing.
 
- 5. [Create](https://console.aws.amazon.com/s3/bucket/create)
+ 6. [Create](https://console.aws.amazon.com/s3/bucket/create)
     three "general purpose" S3 buckets. Apply tags from the left column of the
-    table in Step&nbsp;7 as you create the buckets. Under "Tags - optional",
+    table in Step&nbsp;8 as you create the buckets. Under "Tags - optional",
     click "Add new tag".
 
- 6. In the list of
+ 7. In the list of
     [buckets](https://console.aws.amazon.com/s3/buckets),
     select each bucket in turn, open the "Properties" tab, and scroll down to
     "Bucket ABAC". Click "Edit" and enable ABAC.
 
- 7. Try to create three objects in each of the three buckets. Combinations
+ 8. Try to create three objects in each of the three buckets. Combinations
     marked &check; should succeed, and ones marked &cross; should produce the
     "AccessDenied" error.
 
-    |**Step&nbsp;7: Create objects in these classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
+    |**Step&nbsp;8: Create objects in these classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
     |:---|:---:|:---:|:---:|
-    |**Step&nbsp;7: Tag the objects &rarr;**|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
-    |**&darr; Step&nbsp;5: Tag the buckets**||||
+    |**Step&nbsp;8: Tag the objects &rarr;**|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
+    |**&darr; Step&nbsp;6: Tag the buckets**||||
     |_No bucket tag_|&check;|&check;|&check;|
     |`cost-s3-require-storage-class-intelligent-tiering`|&cross;|&check;|&cross;|
     |`cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`|&cross;|&check;|&check;|
@@ -263,18 +283,25 @@ and 2025.
     ```
 
     ```shell
+    #
+    # STANDARD untagged object
     aws s3 cp test.txt "s3://${S3_BUCKET_NAME}"
+    #
+    # INTELLIGENT_TIERING untagged object
     aws s3 cp test.txt "s3://${S3_BUCKET_NAME}" --storage-class INTELLIGENT_TIERING
+    #
+    #3. STANDARD tagged object
     aws s3api put-object --body test.txt --bucket "${S3_BUCKET_NAME}" --key test.txt --tagging 'cost-s3-override-storage-class-intelligent-tiering='
+    #
     aws s3 rm "s3://${S3_BUCKET_NAME}/test.txt"
 
     ```
 
     </details>
 
- 8. Delete the test buckets.
+ 9. Delete the test buckets.
 
- 9. Add other AWS account numbers, `ou-` organizational unit IDs, or the `r-`
+10. Add other AWS account numbers, `ou-` organizational unit IDs, or the `r-`
     root ID to apply the RCP broadly.
 
 ## Advanced Topics
@@ -292,6 +319,13 @@ and 2025.
   Lifecycle transition rules may later transition an object or object version
   to a different storage class.
   [S3 resource-based policies do not restrict lifecycle rules.](https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html#:~:text=You%20can't%20use%20a%20bucket%20policy,S3%20Lifecycle%20rule.)
+- The RCP works by denying permission for the `s3:PutObject` action unless
+  certain conditions are met. It cannot _add_ permissions. Users will not be
+  able to create objects in S3 buckets if you've already denied permission for
+  this action in your own custom RCP, attached at the same level or at a higher
+  level in the organizational hierarchy.
+- RCPs do not affect resources, such as S3 buckets, in the
+  AWS&nbsp;Organizations management account.
 
 ### Custom Tag Keys
 
@@ -332,13 +366,15 @@ and scope unambiguous.
 <br/>
 
 I provide an optional service control policy that you can apply to
-organizational units to prevent most roles from adding the two special tags to,
-or removing them from, any S3 bucket. The policy also prevents enabling or
-disabling ABAC for any S3 bucket. **The lack of such a control undermines the
-security of most real-world uses of ABAC.**
+organizational units to prevent non-exempt roles from enabling or disabling
+ABAC for any S3 bucket. The policy also prevents non-exempt roles from
+adding/changing/removing the strict and permissive bucket tags, if ABAC is
+enabled for the bucket. **The lack of such a control undermines the security of
+most real-world uses of ABAC.**
 
-Test the SCP first, because it generally reduces existing S3 permissions. Human
-users or automated processes might rely on those permissions.
+Test the SCP before applying it, because it generally reduces existing S3
+permissions. Human users or automated processes might rely on those
+permissions.
 
 You will need at least one exempt role in every account, to manage S3 buckets.
 I recommend
@@ -346,12 +382,13 @@ I recommend
 You can customize `ScpPrincipalCondition` / `scp_principal_condition` to
 [reference permission set roles](https://docs.aws.amazon.com/singlesignon/latest/userguide/referencingpermissionsets.html).
 
-The SCP offers two-way protection: Most roles can neither remove restrictions
-from S3 buckets nor place new restrictions on them. You could adapt the SCP to
-provide one-way protection: most roles would not be prevented from applying the
-special bucket tags in an
-[`s3:CreateBucket`](https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazons3.html#amazons3-CreateBucket)
-request. An exempt role would still have to enable ABAC for the new bucket.
+SCPs do not affect roles or other IAM principals in the AWS&nbsp;Organizations
+management account.
+
+The SCP offers two-way protection: Non-exempt roles can neither remove
+restrictions from S3 buckets nor place new restrictions on them. One-way
+protection, that is, allowing users to enroll buckets but not to disenroll
+them, would be ideal.
 Unfortunately, it is not possible to delegate permission to enable ABAC without
 also delegating permission to disable it. A single API action,
 [s3:PutBucketAbac](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketAbac.html)&nbsp;,
@@ -410,6 +447,12 @@ existing objects to the storage class in which new objects will be created.
 
 Other lifecycle rules, such as lifecycle _expiration_ rules, are fine.
 
+Before enabling ABAC for the bucket, make sure that all permissions and
+workflows have been updated for the new S3 API methods,
+
+- [TagResource](https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_TagResource.html)
+- [UntagResource](https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_UntagResource.html)
+
 The options, decisions, and engineering actions are complex. The security and
 cost consequences are significant. If you need help, please get in touch. This
 is part of what I do for a living.
@@ -439,7 +482,9 @@ is an extremely convenient alternative.
 
 The IAM role you use for each test must:
 
-- be in an AWS account subject to the **resource** control policy
+- _not_ be in the AWS&nbsp;Organizations management account (RCPs do not apply
+  to resources, such as S3 buckets, in this account. SCPs do not apply to roles
+  or other IAM principals in this account.)
 - have permission to:
   - create, tag, and delete S3 buckets
   - enable attribute-based access control: `s3:PutBucketAbac`
@@ -458,16 +503,18 @@ In addition to the requirements in
 [Test Setup](#test-setup),
 above, the role you use for testing the **R**CP must:
 
-- not be in an account subject to the optional **service** control policy (If
+- be in an AWS account subject to the **resource** control policy
+- _not_ be in an account subject to the optional **service** control policy (If
   the **S**CP applies, then you must use an exempt role. See
   `ScpPrincipalCondition` / `scp_principal_condition`&nbsp;.)
 
-Test the RCP by cloning this repository and running:
+Test the RCP by running:
 
 ```shell
+cd /tmp
 git clone 'https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git'
-cd aws-rcp-s3-require-intelligent-tiering
-./test/0test-rcp-s3-require-intelligent-tiering.bash
+cd aws-rcp-s3-require-intelligent-tiering/test
+./00test-rcp-s3-require-intelligent-tiering.bash
 ```
 
 </details>
@@ -479,7 +526,115 @@ cd aws-rcp-s3-require-intelligent-tiering
 
 <br/>
 
-Coming soon...
+Testing the SCP requires two roles, one role that is exempt from the SCP and
+another that is subject to it. Both roles must be in the same AWS account, and
+they must meet the requirements in
+[Test Setup](#test-setup),
+above.
+
+The SCP test scripts default to using the AWS account number and the UTC date
+to generate a unique S3 bucket name prefix. Because the scripts might be
+executed in different environments, no information is passed between them. As
+long as you complete SCP testing within the same UTC day, you will not have to
+enter a non-default value when each script prompts you for the bucket name
+prefix.
+
+To test the SCP,
+
+ 1. Assume the role that is exempt from the SCP.
+ 2. Clone the repository and create the test S3 buckets.
+
+    ```shell
+    cd /tmp
+    git clone 'https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git'
+    cd aws-rcp-s3-require-intelligent-tiering/test
+    ./10test-scp-s3-bucket-restrict-tag-and-abac-changes.bash
+    ```
+
+ 3. Assume the role that is subject to the SCP.
+ 4. If you are using CloudShell, clone the repository in the new file system.
+
+    ```shell
+    cd /tmp
+    git clone 'https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git'
+    cd aws-rcp-s3-require-intelligent-tiering/test
+    ```
+
+ 5. Confirm that you cannot enable ABAC on a bucket. The first test should
+    produce an error, and the script should exit.
+
+    ```shell
+    ./12test-scp-s3-bucket-restrict-tag-and-abac-changes.bash
+    ```
+
+ 6. Assume the role that is exempt from the SCP.
+ 7. Enable ABAC for the test buckets.
+
+    ```shell
+    ./12test-scp-s3-bucket-restrict-tag-and-abac-changes.bash
+    ```
+
+ 8. Assume the role that is subject to the SCP.
+
+ 9. Confirm that you cannot disable ABAC on a bucket. The first test should
+    produce an error, and the script should exit.
+
+    ```shell
+    ./14test-scp-s3-bucket-restrict-tag-and-abac-changes.bash
+    ```
+
+10. In the list of
+    [buckets](https://console.aws.amazon.com/s3/buckets),
+    select the first test bucket. The test bucket name prefix is of the form:
+    deletable-acct-_112233445566_-dt-_YYYY-MM-DD_-no-tags and the first test
+    bucket's name ends in:
+
+    - `-no-tags`
+
+    Open the "Properties" tab and scroll down to "Tags".
+
+11. Try to add any tags not already present:
+
+    - `cost-s3-require-storage-class-intelligent-tiering-override`
+    - `cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`
+
+    Each attempt should produce an error.
+
+12. Try to add an arbitrary tag. This should succeed.
+
+13. Try to delete the arbitrary tag. This should succeed.
+
+14. Try to delete one of these tags, if it is present:
+
+    - `cost-s3-require-storage-class-intelligent-tiering-override`
+    - `cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`
+
+    This should produce an error.
+
+15. Repeat Step&nbsp;10 through Step&nbsp;14 for the remaining test buckets.
+    Their names end in:
+
+    - `-tag`
+    - `-override-tag`
+    - `-both-tags`
+
+16. Assume the role that is exempt from the SCP.
+
+17. Delete the test buckets.
+
+    ```shell
+    ./14test-scp-s3-bucket-restrict-tag-and-abac-changes.bash
+    ```
+
+Unfortunately, as of March,&nbsp;2026, the AWS CLI includes the old S3 tagging
+command for non-ABAC-enabled buckets,
+[`aws s3api put-bucket-tagging`](https://docs.aws.amazon.com/cli/latest/reference/s3api/put-bucket-tagging.html)&nbsp;,
+but no new S3 tagging commands for ABAC-enabled buckets.
+[`aws resourcegroupstaggingapi tag-resources`](https://docs.aws.amazon.com/cli/latest/reference/resourcegroupstaggingapi/tag-resources.html)
+also lacks support for ABAC-enabled S3 buckets. Hopefully,
+~`aws s3api tag-resource`~ and ~`aws s3api untag-resource`~ commands will be
+added to the CLI, saving the effort of writing and maintaining a program just
+for the sake of calling two new AWS API methods!
 
 </details>
 

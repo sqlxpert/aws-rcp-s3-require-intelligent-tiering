@@ -75,7 +75,7 @@ resource "aws_organizations_policy" "scp_s3_bucket_restrict_tag_and_abac_changes
 
   type        = "SERVICE_CONTROL_POLICY"
   name        = "S3BucketRestrictTagAndAbacChanges-${var.rcp_scp_name_suffix}"
-  description = "S3 bucket: Matching IAM principals cannot set/change/remove '${var.s3_bucket_tag_key_strict}' or '${var.s3_bucket_tag_key_permissive}' bucket tags, or enable/disable ABAC. Applicable tag permissions vary based on ABAC status; see statement IDs. GPLv3, Copyright Paul Marcelin. github.com/sqlxpert"
+  description = "S3 bucket: Matching IAM principals cannot enable/disable ABAC. If ABAC is enabled, they cannot set/change/remove '${var.s3_bucket_tag_key_strict}' or '${var.s3_bucket_tag_key_permissive}' bucket tags. GPLv3, Copyright Paul Marcelin. github.com/sqlxpert"
   tags        = local.rcp_scp_tags
 
   # See "Semantics" comment in
@@ -111,66 +111,6 @@ resource "aws_organizations_policy" "scp_s3_bucket_restrict_tag_and_abac_changes
                 "${var.s3_bucket_tag_key_strict}",
                 "${var.s3_bucket_tag_key_permissive}"
               ]
-            }
-          }
-        },
-        {
-          "Sid": "CannotAddTag1BucketAbacDisabled",
-          "Effect": "Deny",
-          "Action": "s3:PutBucketTagging",
-          "Resource": "*",
-          "Condition": {
-            ${var.scp_principal_condition}${local.comma_after_scp_principal_condition}
-            "Null": {
-              "s3:BucketTag/${var.s3_bucket_tag_key_strict}": "true"
-            },
-            "ForAnyValue:StringEquals": {
-              "aws:TagKeys": "${var.s3_bucket_tag_key_strict}"
-            }
-          }
-        },
-        {
-          "Sid": "CannotAddTag2BucketAbacDisabled",
-          "Effect": "Deny",
-          "Action": "s3:PutBucketTagging",
-          "Resource": "*",
-          "Condition": {
-            ${var.scp_principal_condition}${local.comma_after_scp_principal_condition}
-            "Null": {
-              "s3:BucketTag/${var.s3_bucket_tag_key_permissive}": "true"
-            },
-            "ForAnyValue:StringEquals": {
-              "aws:TagKeys": "${var.s3_bucket_tag_key_permissive}"
-            }
-          }
-        },
-        {
-          "Sid": "CannotRemoveTag1BucketAbacDisabled",
-          "Effect": "Deny",
-          "Action": "s3:PutBucketTagging",
-          "Resource": "*",
-          "Condition": {
-            ${var.scp_principal_condition}${local.comma_after_scp_principal_condition}
-            "Null": {
-              "s3:BucketTag/${var.s3_bucket_tag_key_strict}": "false"
-            },
-            "ForAllValues:StringNotEquals": {
-              "aws:TagKeys": "${var.s3_bucket_tag_key_strict}"
-            }
-          }
-        },
-        {
-          "Sid": "CannotRemoveTag2BucketAbacDisabled",
-          "Effect": "Deny",
-          "Action": "s3:PutBucketTagging",
-          "Resource": "*",
-          "Condition": {
-            ${var.scp_principal_condition}${local.comma_after_scp_principal_condition}
-            "Null": {
-              "s3:BucketTag/${var.s3_bucket_tag_key_permissive}": "false"
-            },
-            "ForAllValues:StringNotEquals": {
-              "aws:TagKeys": "${var.s3_bucket_tag_key_permissive}"
             }
           }
         }
