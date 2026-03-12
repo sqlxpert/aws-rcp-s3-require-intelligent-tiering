@@ -13,9 +13,9 @@ Open Policy Agent all let you require lifecycle policies on S3 buckets, but
 creating objects directly in `INTELLIGENT_TIERING` makes lifecycle transition
 rules unnecessary.
 
-&#128161; I've devised **a practical way to enforce the _initial_ S3 storage
-class**...every time an object is created...by any user...in one bucket or
-thousands of buckets.
+&#128161; I've devised **a practical way to enforce the storage class**...every
+time an object is created...by any user...in one bucket or thousands of S3
+buckets.
 
 ## How to Use It
 
