@@ -338,9 +338,9 @@ and 2025.
   Lifecycle transition rules may later transition an object or object version
   to a different storage class.
   [S3 resource-based policies do not restrict lifecycle rules.](https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html#:~:text=You%20can't%20use%20a%20bucket%20policy,S3%20Lifecycle%20rule.)
-- The RCP works by denying `s3:PutObject` requests unless conditions are met.
-  It cannot _add_ permissions that have been denied by another RCP or by an
-  SCP, or that were never allowed by a role's attached or inline policies.
+- The RCP works by denying certain `s3:PutObject` requests. It cannot _add_
+  permissions that have been denied by another RCP or by an SCP, or that were
+  never allowed by a role's attached or inline policies.
 - RCPs do not affect resources, such as S3 buckets, in the
   AWS&nbsp;Organizations management account.
 
@@ -430,7 +430,7 @@ To support multiple concurrent installations, I have parameterized:
 Requiring `INTELLIGENT_TIERING` is
 [best for most S3 use cases](https://builder.aws.com/content/38nqWWauUbgfDsAzx2FpigrfAMv/intelligent-tiering-is-the-best-s3-storage-class-but-data-retrieval-is-not-free#:~:text=Heuristics),
 but in buckets for seldom-accessed logs, you might require that all objects be
-created in `GLACIER_IR` storage class (low storage price, high retrieval
+created in the `GLACIER_IR` storage class (low storage price, high retrieval
 charge), or even in
 [`DEEP_ARCHIVE`](https://builder.aws.com/content/38nzuuU92cmS7nEhDEZNrhjAtG5/save-more-on-s3-storage-by-implementing-asynchronous-retrieval)
 (very low storage price, two-step asynchronous retrieval). Or, perhaps you have
