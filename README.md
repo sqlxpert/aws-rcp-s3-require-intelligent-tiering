@@ -257,12 +257,11 @@ and 2025.
  7. In the list of
     [buckets](https://console.aws.amazon.com/s3/buckets),
     select each bucket in turn, open the "Properties" tab, and scroll down to
-    "Bucket ABAC". Click "Edit" and **enable ABAC. The RCP won't work unless ABAC
-    is enabled for the bucket**.
+    "Bucket ABAC". Click "Edit" and **enable ABAC. The RCP won't work unless
+    ABAC is enabled for the bucket**.
 
- 8. Try to create three objects in each of the three buckets. Combinations
-    marked &check; should succeed, and ones marked &cross; should produce the
-    "AccessDenied" error.
+ 8. Try to create three objects in each of the three buckets. The combinations
+    marked &cross; should produce "AccessDenied".
 
     |**Step&nbsp;8: Create objects in these classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
     |:---|:---:|:---:|:---:|
