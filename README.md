@@ -14,8 +14,8 @@ creating objects directly in `INTELLIGENT_TIERING` makes lifecycle transition
 rules unnecessary.
 
 &#128161; I've devised **a practical way to enforce the storage class**...every
-time an object is created...by any user...in one bucket or thousands of S3
-buckets.
+time an object is created...by any user...in one bucket or thousands. It's the
+closest thing to changing S3's default storage class!
 
 > &#128274; Software supply chain security is on everyone's mind. This solution
 does not require executable code or dependencies. It creates a resource control
