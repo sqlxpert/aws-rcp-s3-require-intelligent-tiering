@@ -96,6 +96,9 @@ trap general_error INT EXIT
 timestamp=$( date --utc '+%s' )  # Seconds since start of 1970
 aws_account_id=$( aws sts get-caller-identity --query 'Account' --output text )
 
+printf  'Caller ARN                     : %s\n' \
+  "$( aws sts get-caller-identity --query 'Arn' --output text )"
+
 read -p 'Unique S3 bucket name prefix   : ' \
   -e -i "deletable-acct-${aws_account_id}-ts-${timestamp}" \
   -r s3_bucket_name_prefix
@@ -284,7 +287,6 @@ do
   set +o xtrace
 done
 
-
 printf '\n'
 printf '\n'
 printf '==============================================================================\n'
@@ -311,6 +313,17 @@ do
   set +o xtrace
 done
 
+printf '\n'
+printf '\n'
+printf '==============================================================================\n'
+printf 'T05 Disable and then re-enable ABAC for the no-tags bucket\n'
+printf '==============================================================================\n'
+s3_bucket_name="${s3_bucket_name_prefix}-no-tags"
+set -o xtrace
+aws s3api put-bucket-abac --bucket "${s3_bucket_name}" --abac-status 'Status=Disabled'
+aws s3api put-bucket-abac --bucket "${s3_bucket_name}" --abac-status 'Status=Enabled'
+set +o xtrace
+
 
 
 pause_with_message "The following tests should produce errors unless noted"
@@ -318,7 +331,7 @@ pause_with_message "The following tests should produce errors unless noted"
 printf '\n'
 printf '\n'
 printf '==============================================================================\n'
-printf 'T05 Create and delete a STANDARD-class object in each of the 3 tagged buckets\n'
+printf 'T06 Create and delete a STANDARD-class object in each of the 3 tagged buckets\n'
 printf '==============================================================================\n'
 for s3_bucket_name_suffix in 'tag' 'override-tag' 'both-tags'
 do
@@ -333,7 +346,7 @@ done
 printf '\n'
 printf '\n'
 printf '==============================================================================\n'
-printf 'T06 Create and delete a STANDARD-class object with the override tag in the\n'
+printf 'T07 Create and delete a STANDARD-class object with the override tag in the\n'
 printf '    bucket tagged with the strict tag\n'
 printf '==============================================================================\n'
 printf '\n'
@@ -351,8 +364,7 @@ set +o xtrace
 printf '\n'
 printf '\n'
 printf '==============================================================================\n'
-printf 'T07 Overwrite a(n) %s-class object in the bucket\n' \
-  "${s3_storage_class}"
+printf 'T08 Overwrite a(n) %s-class object in the bucket\n' "${s3_storage_class}"
 printf '    tagged with the permissive tag\n'
 printf '    with a STANDARD-class object\n'
 printf '==============================================================================\n'
@@ -363,6 +375,20 @@ s3_object_uri="s3://${s3_bucket_name}/${s3_object_key}"
 set -o xtrace
 aws s3 cp test.txt "${s3_object_uri}" --storage-class 'STANDARD'
 set +o xtrace
+
+printf '\n'
+printf '\n'
+printf '==============================================================================\n'
+printf 'T09 Try to disable ABAC in each of the 3 tagged buckets\n'
+printf '==============================================================================\n'
+for s3_bucket_name_suffix in 'tag' 'override-tag' 'both-tags'
+do
+  s3_bucket_name="${s3_bucket_name_prefix}-${s3_bucket_name_suffix}"
+  printf '\n'
+  set -o xtrace
+  aws s3api put-bucket-abac --bucket "${s3_bucket_name}" --abac-status 'Status=Disabled'
+  set +o xtrace
+done
 
 
 
