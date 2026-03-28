@@ -206,9 +206,9 @@ features introduced in 2024 and 2025.
 
       Select "Upload a template file", then select "Choose file" and navigate
       to a locally-saved copy of
-      [cloudformation/aws-rcp-s3-require-intelligent-tiering.yaml](/cloudformation/aws-rcp-s3-require-intelligent-tiering.yaml?raw=true&ref=v1.0.1)
+      [cloudformation/aws-rcp-s3-require-intelligent-tiering.yaml](/blob/v1.0.1/cloudformation/aws-rcp-s3-require-intelligent-tiering.yaml?raw=true)
       [right-click to save as...].
-
+s
       On the next page, set:
 
       - Stack name: `S3RequireIntelligentTiering`
