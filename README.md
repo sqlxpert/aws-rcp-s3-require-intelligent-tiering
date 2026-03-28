@@ -348,9 +348,11 @@ features introduced in 2024 and 2025.
   `cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`&nbsp;.
 - **Before disabling ABAC, you must remove the bucket tag.** Linking ABAC and
   bucket tags this way allows delegating permission to enable ABAC without
-  necessarily delegating permission to _disable_ it. The optional
+  necessarily delegating permission to _disable_ it. The section for the
+  optional
   [service control policy](#service-control-policy)
-  for protecting bucket tags takes advantage of this feature. (The same
+  for protecting bucket tags explains how to take advantage of this feature.
+  (The same
   [s3:PutBucketAbac](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketAbac.html)
   API action serves to enable or disable ABAC, and there is no
   [condition key](https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazons3.html#amazons3-policy-keys)
