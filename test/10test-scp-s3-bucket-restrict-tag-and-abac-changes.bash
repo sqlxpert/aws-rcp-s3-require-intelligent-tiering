@@ -27,6 +27,9 @@ printf '\n'
 date=$( date --utc --iso-8601 )
 aws_account_id=$( aws sts get-caller-identity --query 'Account' --output text )
 
+printf  'Caller ARN                     : %s\n' \
+  "$( aws sts get-caller-identity --query 'Arn' --output text )"
+
 read -p 'Unique S3 bucket name prefix   : ' \
   -e -i "deletable-acct-${aws_account_id}-dt-${date}" \
   -r s3_bucket_name_prefix
