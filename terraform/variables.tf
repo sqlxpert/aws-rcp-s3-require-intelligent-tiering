@@ -121,7 +121,7 @@ variable "scp_principal_condition" {
 
 variable "rcp_scp_tags" {
   type        = map(string)
-  description = "Tag map for the RCP and SCP. Keys, all optional, are tag keys. Values are tag values. This takes precedence over the Terraform AWS provider's default_tags and over tags attributes defined by the module. To remove tags defined by the module, set the terraform and source tags to null ."
+  description = "Tag map for the RCP and SCP. Keys, all optional, are tag keys. Values are tag values. This takes precedence over the Terraform AWS provider's default_tags and over tags attributes defined by the module. To remove tags defined by the module, set the terraform , name_suffix , source and rights tags to null ."
 
   default = {}
 }
