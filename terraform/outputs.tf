@@ -17,7 +17,7 @@ output "scp_s3_bucket_restrict_tag_and_abac_changes_arn" {
     ? aws_organizations_policy.scp_s3_bucket_restrict_tag_and_abac_changes[0].arn
     : ""
   )
-  description = "ARN of resource control policy to require specific S3 storage class"
+  description = "ARN of system control policy to restrict S3 bucket tag and ABAC changes"
 }
 output "scp_s3_bucket_restrict_tag_and_abac_changes_id" {
   value = (
@@ -25,5 +25,5 @@ output "scp_s3_bucket_restrict_tag_and_abac_changes_id" {
     ? aws_organizations_policy.scp_s3_bucket_restrict_tag_and_abac_changes[0].id
     : ""
   )
-  description = "Physical identifier of resource control policy"
+  description = "Physical identifier of system control policy"
 }

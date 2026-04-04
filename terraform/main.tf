@@ -160,7 +160,6 @@ resource "aws_organizations_policy_attachment" "scp_s3_bucket_restrict_tag_and_a
     (local.generate_scp && var.enable_scp) ? var.scp_target_ids : []
   )
 
-
   policy_id = aws_organizations_policy.scp_s3_bucket_restrict_tag_and_abac_changes[0].id
   target_id = each.key
 }
