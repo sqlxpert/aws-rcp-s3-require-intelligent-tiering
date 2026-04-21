@@ -273,6 +273,9 @@ Conditions:
     - !Equals [ !Ref EnableRcp, "true" ]
     - !Not [ !Equals [ !Join [ "", !Ref RcpTargetIds ], "" ] ]
 
+  RequireS3StorageClassStandard:
+    !Equals [ !Ref RequireS3StorageClass, "STANDARD" ]
+
   ScpPrincipalConditionNotBlank:
     !Not [ !Equals [ !Ref ScpPrincipalCondition, "" ] ]
 
@@ -303,82 +306,113 @@ Resources:
         tagging an object '${S3ObjectTagKeyOverrideBucketTag}' on creation.
         GPLv3, Copyright Paul Marcelin. github.com/sqlxpert
       TargetIds: !If [ EnableRcpTrue, !Ref RcpTargetIds, !Ref AWS::NoValue ]
-      Content: !Sub >-
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Sid": "S3BucketRequireStorageClass",
-              "Effect": "Deny",
-              "Principal": "*",
-              "Action": "s3:PutObject",
-              "Resource": "*",
-              "Condition": {
-                "Null": {
-                  "s3:BucketTag/${S3BucketTagKeyStrict}": "false",
-                  "s3:BucketTag/${S3BucketTagKeyPermissive}": "true"
-                },
-                "StringNotEquals": {
-                  "s3:x-amz-storage-class": "${RequireS3StorageClass}"
+
+      # "s3:TagResource" on "arn:${AWS::Partition}:s3:::*": This RCP concerns
+      # bucket tags only. Though an S3 ARN pattern ending in * might match a
+      # bucket (...:BUCKET_NAME) as well as the objects in it
+      # (...:BUCKET_NAME/OBJECT_KEY), the s3[control] TagResource method does
+      # not currently (2026-04) operate on objects.
+      # https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_TagResource.html#:~:text=This%20operation%20is%20only%20supported%20for
+      Content: !Sub
+        - >-
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "S3BucketRequireStorageClass",
+                "Effect": "Deny",
+                "Principal": "*",
+                "Action": "s3:PutObject",
+                "Resource": "*",
+                "Condition": {
+                  "Null": {${ForbidDefaultStorageClassStandard}
+                    "s3:BucketTag/${S3BucketTagKeyStrict}": "false",
+                    "s3:BucketTag/${S3BucketTagKeyPermissive}": "true"
+                  },
+                  "StringNotEquals": {
+                    "s3:x-amz-storage-class": "${RequireS3StorageClass}"
+                  }
+                }
+              },
+              {
+                "Sid": "S3BucketRequireStorageClassButPermitObjectOverride",
+                "Effect": "Deny",
+                "Principal": "*",
+                "Action": "s3:PutObject",
+                "Resource": "*",
+                "Condition": {
+                  "Null": {${AllowDefaultStorageClassStandard}
+                    "s3:BucketTag/${S3BucketTagKeyPermissive}": "false"
+                  },
+                  "StringNotEquals": {
+                    "s3:x-amz-storage-class": "${RequireS3StorageClass}"
+                  },
+                  "ForAllValues:StringNotEquals": {
+                    "s3:RequestObjectTagKeys": "${S3ObjectTagKeyOverrideBucketTag}"
+                  }
+                }
+              },
+              {
+                "Sid": "S3BucketForbidConfusingObjectTag",
+                "Effect": "Deny",
+                "Principal": "*",
+                "Action": "s3:TagResource",
+                "Resource": "arn:${AWS::Partition}:s3:::*",
+                "Condition": {
+                  "ForAnyValue:StringEquals": {
+                    "aws:TagKeys": "${S3ObjectTagKeyOverrideBucketTag}"
+                  }
+                }
+              },
+              {
+                "Sid": "S3BucketForbidDisablingAbacTag1",
+                "Effect": "Deny",
+                "Principal": "*",
+                "Action": "s3:PutBucketAbac",
+                "Resource": "*",
+                "Condition": {
+                  "Null": {
+                    "s3:BucketTag/${S3BucketTagKeyStrict}": "false"
+                  }
+                }
+              },
+              {
+                "Sid": "S3BucketForbidDisablingAbacTag2",
+                "Effect": "Deny",
+                "Principal": "*",
+                "Action": "s3:PutBucketAbac",
+                "Resource": "*",
+                "Condition": {
+                  "Null": {
+                    "s3:BucketTag/${S3BucketTagKeyPermissive}": "false"
+                  }
                 }
               }
-            },
-            {
-              "Sid": "S3BucketRequireStorageClassButPermitObjectOverride",
-              "Effect": "Deny",
-              "Principal": "*",
-              "Action": "s3:PutObject",
-              "Resource": "*",
-              "Condition": {
-                "Null": {
-                  "s3:BucketTag/${S3BucketTagKeyPermissive}": "false"
-                },
-                "StringNotEquals": {
-                  "s3:x-amz-storage-class": "${RequireS3StorageClass}"
-                },
-                "ForAllValues:StringNotEquals": {
-                  "s3:RequestObjectTagKeys": "${S3ObjectTagKeyOverrideBucketTag}"
-                }
-              }
-            },
-            {
-              "Sid": "S3BucketForbidConfusingObjectTag",
-              "Effect": "Deny",
-              "Principal": "*",
-              "Action": "s3:TagResource",
-              "Resource": "*",
-              "Condition": {
-                "ForAnyValue:StringEquals": {
-                  "aws:TagKeys": "${S3ObjectTagKeyOverrideBucketTag}"
-                }
-              }
-            },
-            {
-              "Sid": "S3BucketForbidDisablingAbacTag1",
-              "Effect": "Deny",
-              "Principal": "*",
-              "Action": "s3:PutBucketAbac",
-              "Resource": "*",
-              "Condition": {
-                "Null": {
-                  "s3:BucketTag/${S3BucketTagKeyStrict}": "false"
-                }
-              }
-            },
-            {
-              "Sid": "S3BucketForbidDisablingAbacTag2",
-              "Effect": "Deny",
-              "Principal": "*",
-              "Action": "s3:PutBucketAbac",
-              "Resource": "*",
-              "Condition": {
-                "Null": {
-                  "s3:BucketTag/${S3BucketTagKeyPermissive}": "false"
-                }
-              }
-            }
-          ]
-        }
+            ]
+          }
+        # STANDARD is the default storage class for s3:PutObject , but if the
+        # request did not include x-amz-storage-class , S3 will not supply
+        # x-amz-storage-class: STANDARD before policy evaluation.
+        # These substitution variables are named for their effect in the usual
+        # case, where the required storage class is other than STANDARD:
+        -
+          ForbidDefaultStorageClassStandard: !If
+            - RequireS3StorageClassStandard
+            - |-
+
+              "s3:x-amz-storage-class": "false",
+            - ""
+            # StringNotEquals is true if the key is missing; skipping this
+            # "Null"..."false" check means, do Deny s3:PutObject
+
+          AllowDefaultStorageClassStandard: !If
+            - RequireS3StorageClassStandard
+            - ""
+            - |-
+
+              "s3:x-amz-storage-class": "false",
+            # StringNotEquals would be true if the key were missing; adding
+            # this "Null"..."false" check means, don't Deny s3:PutObject
 
   ScpS3BucketRestrictTagAndAbacChanges:
     Type: AWS::Organizations::Policy
@@ -400,20 +434,14 @@ Resources:
         GPLv3, Copyright Paul Marcelin. github.com/sqlxpert
       TargetIds: !If [ EnableScpTrue, !Ref ScpTargetIds, !Ref AWS::NoValue ]
 
-      # Semantics:
-      #
-      # aws:TagKeys is a property of the request.
-      # - If ABAC is enabled for the bucket, tags in an s3:TagResource request
-      #   are new bucket tags and tags in an s3:UntagResource request are
-      #   existing bucket tags that are being deleted.
-      # - If ABAC is disabled, tags in s3:PutBucketTagging are new, or are
-      #   existing tags that are not being deleted. Existing bucket tags that
-      #   are missing from the request are being deleted.
-      #
-      # s3:BucketTag/TAG_KEY is an existing property of the resource (bucket).
-      #
-      # https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html
-      # https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazons3.html#amazons3-s3_BucketTag___TagKey_
+      # "TagResource", "UntagResource": The SCP cannot regulate bucket tagging
+      # operations on buckets for which attribute-based access control is
+      # disabled. The old s3:PutBucketTagging permission does not allow
+      # selective regulation of the old PutBucketTagging and
+      # DeleteBucketTagging API methods.
+      # https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazons3.html#amazons3-PutBucketTagging
+      # https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketTagging.html
+      # https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketTagging.html
       Content: !Sub
         - >-
           {

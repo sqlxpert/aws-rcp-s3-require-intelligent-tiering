@@ -1,4 +1,4 @@
-# Require S3 Intelligent Tiering!
+# Tag to Require S3 Intelligent Tiering
 
 Still relying on lifecycle policies to transition S3 objects to Intelligent
 Tiering after the fact? You're wasting money! Set the storage class in scripts
@@ -17,9 +17,9 @@ rules unnecessary.
 time an object is created...by any user...in one bucket or thousands. It's the
 closest thing to changing S3's default storage class!
 
-> &#128274; Software supply chain security is on everyone's mind. This solution
+>&#128274; Software supply chain security is on everyone's mind. This solution
 does not require executable code or dependencies. It creates a resource control
-policy, which you can read before attaching anywhere. I've made GitHub releases
+policy, which you can read before attaching. I've made GitHub releases
 immutable as of `v1.0.1`&nbsp;. In case you do not want to execute a shell
 script and/or use the AWS command-line interface for testing, I also explain
 how to test manually in the AWS Console.
@@ -29,17 +29,17 @@ how to test manually in the AWS Console.
 ### Strict Bucket Tag
 
 `cost-s3-require-storage-class-intelligent-tiering` **&larr; Tag a new S3
-bucket to require Intelligent Tiering** for all new objects. Attribute-based
-access control must be enabled for the bucket.
+bucket to require Intelligent Tiering** for all new objects.
+[Attribute-based access control](https://docs.aws.amazon.com/AmazonS3/latest/userguide/buckets-tagging-enable-abac.html)
+must be enabled for the bucket.
 
 Users who forget to add...
 
-- `--storage-class INTELLIGENT_TIERING` when running `aws s3 cp` or
-  `aws s3api put-object`
-- `StorageClass="INTELLIGENT_TIERING"` when calling
-  `client("s3").put_object()` in boto3 (or the equivalent in other AWS SDKs)
-- `x-amz-storage-class: INTELLIGENT_TIERING` for the `PutObject` HTTP API
-  operation
+|Addition|Command or Method|
+|:---|:---|
+|`--storage-class INTELLIGENT_TIERING`|`aws s3 cp`<br/>`aws s3api put-object`|
+|`StorageClass="INTELLIGENT_TIERING"`|`client("s3").put_object()` in boto3<br/>or the equivalent in other AWS SDKs|
+|`x-amz-storage-class: INTELLIGENT_TIERING`|`PutObject`|
 
 ...get an "AccessDenied" error. In case a user missed
 "require-storage-class"... in the bucket tag, the error message tells an
@@ -76,18 +76,20 @@ overrides.** ABAC must be enabled for the bucket.
 `cost-s3-override-storage-class-intelligent-tiering` **&larr; Tag an object to
 create it in a different storage class.**
 
-Add:
+|Command or Method|Additions|
+|:---|:---|
+|`aws s3api put-object`|`--tagging 'cost-s3-override-storage-class-intelligent-tiering='`|
+||`--storage-class STANDARD`|
+|`client("s3").put_object()`<br/>or equivalent|`Tagging="cost-s3-override-storage-class-intelligent-tiering="`|
+||`StorageClass="STANDARD"`|
+|`PutObject`|`x-amz-tagging: cost-s3-override-storage-class-intelligent-tiering=`|
+||`x-amz-storage-class: STANDARD`|
 
-- `--tagging 'cost-s3-override-storage-class-intelligent-tiering='
-   --storage-class STANDARD`<br/>when running `aws s3api put-object`
-   (~`aws s3 cp`~ doesn't accept tags.)
-- `Tagging="cost-s3-override-storage-class-intelligent-tiering=", StorageClass="STANDARD"`<br/>
-  when calling `client("s3").put_object()` (or equivalent)
-- `x-amz-tagging: cost-s3-override-storage-class-intelligent-tiering=`<br/>
-  `x-amz-storage-class: STANDARD` (Encode `=` as `%3D` if your HTTP library
-  doesn't.)
-
-Change `STANDARD` to the storage class of your choice.
+- Change `STANDARD` to the storage class of your choice.
+- If `STANDARD` _is_ your choice, you can omit the storage class.
+- Encode `=` as `%3D` in the `PutObject` header value, if your HTTP library
+  doesn't.
+- ~`aws s3 cp`~ does not support setting S3 object tags.
 
 Jump to:
 [Installation](#installation)
@@ -102,7 +104,7 @@ This CloudFormation or Terraform template is a practical solution to Cloud
 Efficiency Hub report
 [CER-0032 Delayed Transition of Objects to Intelligent-Tiering in an S3 Bucket](https://hub.pointfive.co/inefficiencies/delayed-transition-of-objects-to-intelligent-tiering-in-an-s3-bucket).
 
-Just 40&nbsp;lines of JSON (two critical statements) in a resource control
+Just 42&nbsp;lines of JSON (two critical statements) in a resource control
 policy suffice to deny `s3:PutObject` requests if the bucket has a particular
 bucket tag and the requester has not set the required storage class (or the
 required object tag, if overrides are permitted). It works thanks to AWS
@@ -260,9 +262,14 @@ features introduced in 2024 and 2025.
     with full S3 permissions.
 
  6. [Create](https://console.aws.amazon.com/s3/bucket/create)
-    3&nbsp;"general purpose" S3 buckets. Apply tags from the left column of the
-    table in Step&nbsp;8 as you create the buckets. Under "Tags - optional",
-    click "Add new tag".
+    3&nbsp;"general purpose" S3 buckets, tagging them as you create them.
+    (Under "Tags - optional", click "Add new tag".)
+
+    ||Bucket tags|
+    |:---:|:---|
+    |1|_No bucket tag_|
+    |2|`cost-s3-require-storage-class-intelligent-tiering`|
+    |3|`cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`|
 
  7. In the list of
     [buckets](https://console.aws.amazon.com/s3/buckets),
@@ -273,13 +280,13 @@ features introduced in 2024 and 2025.
  8. Try to create 3&nbsp;objects in each of the 3&nbsp;buckets. Combinations
     marked &cross; should produce "AccessDenied".
 
-    |**Step&nbsp;8: Create objects in these classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
-    |:---|:---:|:---:|:---:|
-    |**Step&nbsp;8: Tag the objects &rarr;**|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
-    |**&darr; Step&nbsp;6: Tag the buckets**||||
-    |_No bucket tag_|&check;|&check;|&check;|
-    |`cost-s3-require-storage-class-intelligent-tiering`|&cross;|&check;|&cross;|
-    |`cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`|&cross;|&check;|&check;|
+    ||**Step&nbsp;8: Create objects in these classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
+    |:---:|:---|:---:|:---:|:---:|
+    ||**Step&nbsp;8: Tag the objects &rarr;**|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
+    ||**&darr; Bucket tags from Step&nbsp;6**||||
+    |1|_No bucket tag_|&check;|&check;|&check;|
+    |2|`cost-s3-require-storage-class-intelligent-tiering`|&cross;|&check;|&cross;|
+    |3|`cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`|&cross;|&check;|&check;|
 
     You do not need to install or use the AWS command-line interface to test.
     You can create objects in the AWS Console by selecting an S3 bucket and
@@ -331,15 +338,15 @@ features introduced in 2024 and 2025.
 
 ### Semantics
 
-- **Set the required storage class every time you overwrite an object** or you
-  create a new version. If the bucket tag permits overrides and you want to
-  override the required storage class, set the object tag when you overwrite an
-  object or you create a new version.
+- **Set the required storage class every time that you overwrite an object** or
+  that you create a new version. If the bucket tag permits overrides and you
+  want to override the required storage class, set the object tag when you
+  overwrite an object or you create a new version.
 - **The permissive bucket tag wins out** over the strict bucket tag. If a
   bucket has _both_ bucket tags, users _can_ override the required storage
   class by setting the object tag. This interpretation avoids contradicting
-  what users can _see_: ..."override-with-object-tag" in one of the bucket's
-  two tags.
+  what users _see_: ..."override-with-object-tag" in one of the two bucket
+  tags.
 - **You cannot apply the object tag to any bucket** with ABAC enabled.
   Applying the _object_ tag to a _bucket_ has no effect, and could lead to
   confusion. Apply the `cost-s3-override-storage-class-intelligent-tiering`
@@ -464,8 +471,8 @@ created in the `GLACIER_IR` storage class (low storage price, high retrieval
 charge), or even in
 [`DEEP_ARCHIVE`](https://builder.aws.com/content/38nzuuU92cmS7nEhDEZNrhjAtG5/save-more-on-s3-storage-by-implementing-asynchronous-retrieval)
 (very low storage price, two-step asynchronous retrieval). Or, perhaps you have
-some buckets whose objects are always frequently-accessed and short-lived, and
-you want to be sure that objects can only be created in `STANDARD` class.
+a bucket whose objects are always frequently-accessed and short-lived, and you
+want to be sure they can only be created in `STANDARD` class.
 
 </details>
 
@@ -476,15 +483,21 @@ you want to be sure that objects can only be created in `STANDARD` class.
 
 <br/>
 
-> The options, decisions, and engineering actions for existing S3 buckets are
+>The options, decisions, and engineering actions for existing S3 buckets are
 complex. The security and cost consequences are significant. If you need help,
 please get in touch. This is part of what I do for a living.
+
+#### Specify the Storage Class in Code
 
 Before applying either the strict or permissive bucket tag to an existing S3
 bucket, be sure that all workflows have been updated to specify the required
 storage class when creating objects. This is not possible for workflows you
-don't control! For a bucket that is the destination of a replication rule,
+don't control!
+
+For a bucket that is the destination of a replication rule,
 [set the storage class in the replication rule](https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-add-config.html#storage-class-configuration).
+
+#### Retire Lifecycle Transition Rules
 
 You must also remove existing lifecycle _transition_ rules if they would
 [conflict](https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-transition-general-considerations.html#lifecycle-general-considerations-transition-sc)
@@ -497,18 +510,42 @@ existing objects to the storage class in which new objects will be created.
 
 Other lifecycle rules, such as lifecycle _expiration_ rules, are fine.
 
+#### Update Bucket Tagging Policies and Code
+
 After ABAC has been enabled for the bucket, calling the old S3 bucket tagging
 methods will cause errors:
 
-- ~GetBucketTagging~
 - ~PutBucketTagging~
+- ~DeleteBucketTagging~
 
-Before enabling ABAC for the bucket, make sure that all workflows and policies
-have been updated to reference the new S3 tagging methods,
+Make sure that all policies and workflows have been updated to reference the
+new S3 tagging methods,
 
-- [ListTagsForResource](https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_ListTagsForResource.html)
-- [TagResource](https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_TagResource.html)
-- [UntagResource](https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_UntagResource.html)
+- [`TagResource`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_TagResource.html)
+- [`UntagResource`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_UntagResource.html) (To delete a tag, you must now list its tag key
+  explicitly.)
+- Optional:
+  [`ListTagsForResource`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_ListTagsForResource.html)
+  (GetBucketTagging will still work.)
+
+`s3control` is the service for the new methods, but `s3:` remains the service
+prefix in policies.
+
+Replace `*` (if you used it) with
+[`arn:aws:s3:::*`](https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazons3.html#amazons3-bucket)
+to write tags on buckets only. The new methods cover other resource types, but
+not objects _in_ buckets, so the `*` wildcard at the end of the bucket ARN
+pattern will not add ambiguity. (Change `aws` if your partition differs.)
+
+If the resource in a policy statement is an S3 bucket, the following
+[condition keys](https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazons3.html#amazons3-policy-keys)
+become available when ABAC is enabled. Check for pre-existing references and
+know the consequences!
+
+|From the request|From the resource|
+|:---:|:---:|
+|`aws:RequestTag/`_TAG_KEY_|`s3:BucketTag/`_TAG_KEY_<br/> `aws:ResourceTag/`_TAG_KEY_|
+|`aws:TagKeys`||
 
 </details>
 
@@ -683,20 +720,6 @@ To test the SCP,
     ```shell
     ./18test-scp-s3-bucket-restrict-tag-and-abac-changes.bash
     ```
-
-Unfortunately, as of March,&nbsp;2026, the AWS CLI includes the old command for
-tagging non-ABAC-enabled S3 buckets,
-[`aws s3api put-bucket-tagging`](https://docs.aws.amazon.com/cli/latest/reference/s3api/put-bucket-tagging.html)&nbsp;,
-but not the new command for tagging ABAC-enabled buckets.
-[`aws resourcegroupstaggingapi tag-resources`](https://docs.aws.amazon.com/cli/latest/reference/resourcegroupstaggingapi/tag-resources.html)
-also lacks support for ABAC-enabled S3 buckets. Hopefully,
-~`aws s3api tag-resource`~ and ~`aws s3api untag-resource`~ commands will be
-added to the CLI, saving the effort of writing and maintaining a program just
-to call two AWS API methods during testing!
-
-[`aws cloudcontrol update-resource`](https://docs.aws.amazon.com/cli/latest/reference/cloudcontrol/update-resource.html)
-_can_ tag ABAC-enabled S3 buckets, but checking for completion of an
-asynchronous operation is inconvenient in a shell script.
 
 </details>
 

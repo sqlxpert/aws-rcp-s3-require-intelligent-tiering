@@ -100,7 +100,7 @@ printf  'Caller ARN                     : %s\n' \
   "$( aws sts get-caller-identity --query 'Arn' --output text )"
 
 read -p 'Unique S3 bucket name prefix   : ' \
-  -e -i "deletable-acct-${aws_account_id}-ts-${timestamp}" \
+  -e -i "deletable-ts-${timestamp}-${aws_account_id}-${AWS_REGION:?'Set this first'}-an" \
   -r s3_bucket_name_prefix
 
 read -p 'S3 storage class (not STANDARD): ' \
@@ -139,7 +139,8 @@ s3_object_uri="${s3_bucket_uri}/${s3_object_key}"
 
 trap delete_scratch_s3_bucket_and_exit INT EXIT
 set -o xtrace
-aws s3api create-bucket --bucket "${s3_bucket_name}" \
+aws s3api create-bucket \
+  --bucket-namespace 'account-regional' --bucket "${s3_bucket_name}" \
   --create-bucket-configuration "LocationConstraint=${AWS_REGION}" \
   --query 'BucketArn' --output text
 aws s3api put-object \
@@ -163,7 +164,8 @@ printf '\n'
 trap delete_scratch_s3_bucket_and_exit INT EXIT
 set +o errexit
 set -o xtrace
-if ! aws s3api create-bucket --bucket "${s3_bucket_name}" \
+if ! aws s3api create-bucket \
+  --bucket-namespace 'account-regional' --bucket "${s3_bucket_name}" \
   --create-bucket-configuration \
   "LocationConstraint=${AWS_REGION},Tags=[{Key=${s3_bucket_tag_key_strict},Value=,}]" \
   --query 'BucketArn' --output text; then
@@ -196,9 +198,9 @@ printf 'S3 Create the no-tags S3 bucket\n'
 printf '==============================================================================\n'
 printf '\n'
 set -o xtrace
-aws s3api create-bucket --bucket "${s3_bucket_name_prefix}-no-tags" \
-  --create-bucket-configuration \
-  "LocationConstraint=${AWS_REGION}" \
+aws s3api create-bucket \
+  --bucket-namespace 'account-regional' --bucket "${s3_bucket_name_prefix}-no-tags" \
+  --create-bucket-configuration "LocationConstraint=${AWS_REGION}" \
   --query 'BucketArn' --output text
 set +o xtrace
 
@@ -210,17 +212,20 @@ printf '========================================================================
 printf '\n'
 set -o xtrace
 
-aws s3api create-bucket --bucket "${s3_bucket_name_prefix}-tag" \
+aws s3api create-bucket \
+  --bucket-namespace 'account-regional' --bucket "${s3_bucket_name_prefix}-tag" \
   --create-bucket-configuration \
   "LocationConstraint=${AWS_REGION},Tags=[{Key=${s3_bucket_tag_key_strict},Value=,}]" \
   --query 'BucketArn' --output text
 
-aws s3api create-bucket --bucket "${s3_bucket_name_prefix}-override-tag" \
+aws s3api create-bucket \
+  --bucket-namespace 'account-regional' --bucket "${s3_bucket_name_prefix}-override-tag" \
   --create-bucket-configuration \
   "LocationConstraint=${AWS_REGION},Tags=[{Key=${s3_bucket_tag_key_permissive},Value=,}]" \
   --query 'BucketArn' --output text
 
-aws s3api create-bucket --bucket "${s3_bucket_name_prefix}-both-tags" \
+aws s3api create-bucket \
+  --bucket-namespace 'account-regional' --bucket "${s3_bucket_name_prefix}-both-tags" \
   --create-bucket-configuration \
   "LocationConstraint=${AWS_REGION},Tags=[{Key=${s3_bucket_tag_key_strict},Value=,},{Key=${s3_bucket_tag_key_permissive},Value=,}]" \
   --query 'BucketArn' --output text

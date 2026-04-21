@@ -10,6 +10,9 @@ resource "aws_organizations_policy" "rcp_s3_bucket_require_storage_class" {
   description = "S3 bucket with ABAC enabled, tagged '${var.s3_bucket_tag_key_strict}': Require that all objects be created in ${var.require_s3_storage_class} storage class, forbid disabling ABAC. If tagged '${var.s3_bucket_tag_key_permissive}': Override storage class by tagging an object '${var.s3_object_tag_key_override_bucket_tag}' on creation. GPLv3, Copyright Paul Marcelin. github.com/sqlxpert"
   tags        = local.rcp_scp_tags
 
+  # See comments under RcpS3BucketRequireStorageClass in
+  # ../cloudformation/aws-rcp-s3-require-intelligent-tiering.yaml
+
   # I prefer data.aws_iam_policy_document , but a HEREDOC allows source parity
   # with CloudFormation (except for variables):
   content = <<-END_POLICY
@@ -114,7 +117,7 @@ resource "aws_organizations_policy" "scp_s3_bucket_restrict_tag_and_abac_changes
   description = "S3 bucket: Matching IAM principals cannot enable/disable ABAC. If ABAC is enabled, they cannot add/change/remove '${var.s3_bucket_tag_key_strict}' or '${var.s3_bucket_tag_key_permissive}' bucket tags. GPLv3, Copyright Paul Marcelin. github.com/sqlxpert"
   tags        = local.rcp_scp_tags
 
-  # See "Semantics" comment in
+  # See comments under ScpS3BucketRestrictTagAndAbacChanges in
   # ../cloudformation/aws-rcp-s3-require-intelligent-tiering.yaml
 
   # I prefer data.aws_iam_policy_document , but a HEREDOC allows source parity
