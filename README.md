@@ -208,7 +208,7 @@ features introduced in 2024 and 2025.
 
       Select "Upload a template file", then select "Choose file" and navigate
       to a locally-saved copy of
-      [cloudformation/aws-rcp-s3-require-intelligent-tiering.yaml](/../../blob/v1.0.2/cloudformation/aws-rcp-s3-require-intelligent-tiering.yaml?raw=true)
+      [cloudformation/aws-rcp-s3-require-intelligent-tiering.yaml](/../../blob/v1.1.0/cloudformation/aws-rcp-s3-require-intelligent-tiering.yaml?raw=true)
       [right-click to save as...].
 
       On the next page, set:
@@ -230,7 +230,7 @@ features introduced in 2024 and 2025.
 
       ```terraform
       module "s3_require_intelligent_tiering" {
-        source = "git::https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git//terraform?ref=v1.0.2"
+        source = "git::https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git//terraform?ref=v1.1.0"
         # Reference a specific version from github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering/releases
         # Check that the release is immutable!
 
@@ -605,7 +605,7 @@ Test the RCP by running:
 
 ```shell
 cd /tmp
-git clone --branch 'v1.0.2' --depth 1 --config 'advice.detachedHead=false' \
+git clone --branch 'v1.1.0' --depth 1 --config 'advice.detachedHead=false' \
   'https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git'
 cd aws-rcp-s3-require-intelligent-tiering/test
 ./00test-rcp-s3-require-intelligent-tiering.bash
@@ -640,7 +640,7 @@ To test the SCP,
 
     ```shell
     cd /tmp
-    git clone --branch 'v1.0.2' --depth 1 --config 'advice.detachedHead=false' \
+    git clone --branch 'v1.1.0' --depth 1 --config 'advice.detachedHead=false' \
       'https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git'
     cd aws-rcp-s3-require-intelligent-tiering/test
     ./10test-scp-s3-bucket-restrict-tag-and-abac-changes.bash
@@ -651,7 +651,7 @@ To test the SCP,
 
     ```shell
     cd /tmp
-    git clone --branch 'v1.0.2' --depth 1 --config 'advice.detachedHead=false' \
+    git clone --branch 'v1.1.0' --depth 1 --config 'advice.detachedHead=false' \
       'https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git'
     cd aws-rcp-s3-require-intelligent-tiering/test
     ```
