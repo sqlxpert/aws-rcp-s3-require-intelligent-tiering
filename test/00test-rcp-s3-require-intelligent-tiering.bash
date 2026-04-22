@@ -69,7 +69,7 @@ delete_test_s3_buckets_and_exit() {
   for s3_bucket_name_prefix in 'no-tags' 'tag' 'override-tag' 'both-tags'
   do
     printf '\n'
-    delete_s3_bucket "s3://${s3_bucket_name_suffix}-${s3_bucket_name_prefix}"
+    delete_s3_bucket "s3://${s3_bucket_name_prefix}-${s3_bucket_name_suffix}"
   done
   exit 1
 }
@@ -298,6 +298,7 @@ printf '========================================================================
 printf 'T04 Create, overwrite and delete a STANDARD-class object with the override tag\n'
 printf '    in the bucket tagged with the permissive tag\n'
 printf '    and the bucket tagged with both the strict and permissive tags\n'
+printf '    (specify storage class explicitly, then implicitly)\n'
 printf '==============================================================================\n'
 for s3_bucket_name_prefix in 'override-tag' 'both-tags'
 do
@@ -311,7 +312,16 @@ do
   do
     aws s3api put-object \
       --body test.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
-      --storage-class 'STANDARD' --tagging "${s3_object_tag_key_override_bucket_tag}=" \
+      --storage-class 'STANDARD' \
+      --tagging "${s3_object_tag_key_override_bucket_tag}=" \
+      --query 'ETag' --output text
+  done
+  # shellcheck disable=SC2034
+  for put_count in {1..2}
+  do
+    aws s3api put-object \
+      --body test.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
+      --tagging "${s3_object_tag_key_override_bucket_tag}=" \
       --query 'ETag' --output text
   done
   aws s3 rm "${s3_object_uri}"
@@ -337,6 +347,7 @@ printf '\n'
 printf '\n'
 printf '==============================================================================\n'
 printf 'T06 Create and delete a STANDARD-class object in each of the 3 tagged buckets\n'
+printf '    (specify storage class explicitly, then implicitly)\n'
 printf '==============================================================================\n'
 for s3_bucket_name_prefix in 'tag' 'override-tag' 'both-tags'
 do
@@ -344,6 +355,7 @@ do
   printf '\n'
   set -o xtrace
   aws s3 cp test.txt "${s3_object_uri}" --storage-class 'STANDARD'
+  aws s3 cp test.txt "${s3_object_uri}"
   aws s3 rm "${s3_object_uri}"
   set +o xtrace
 done
@@ -353,6 +365,7 @@ printf '\n'
 printf '==============================================================================\n'
 printf 'T07 Create and delete a STANDARD-class object with the override tag in the\n'
 printf '    bucket tagged with the strict tag\n'
+printf '    (specify storage class explicitly, then implicitly)\n'
 printf '==============================================================================\n'
 printf '\n'
 s3_bucket_name="tag-${s3_bucket_name_suffix}"
@@ -361,7 +374,12 @@ s3_object_uri="s3://${s3_bucket_name}/${s3_object_key}"
 set -o xtrace
 aws s3api put-object \
   --body test.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
-  --storage-class 'STANDARD' --tagging "${s3_object_tag_key_override_bucket_tag}=" \
+  --storage-class 'STANDARD' \
+  --tagging "${s3_object_tag_key_override_bucket_tag}=" \
+  --query 'ETag' --output text
+aws s3api put-object \
+  --body test.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
+  --tagging "${s3_object_tag_key_override_bucket_tag}=" \
   --query 'ETag' --output text
 aws s3 rm "${s3_object_uri}"
 set +o xtrace
@@ -371,7 +389,8 @@ printf '\n'
 printf '==============================================================================\n'
 printf 'T08 Overwrite a(n) %s-class object in the bucket\n' "${s3_storage_class}"
 printf '    tagged with the permissive tag\n'
-printf '    with a STANDARD-class object, specifying the storage class explicitly\n'
+printf '    with a STANDARD-class object\n'
+printf '    (specify storage class explicitly, then implicitly)\n'
 printf '==============================================================================\n'
 printf '\n'
 s3_bucket_name="override-tag-${s3_bucket_name_suffix}"
@@ -379,24 +398,13 @@ s3_object_key='other.txt'
 s3_object_uri="s3://${s3_bucket_name}/${s3_object_key}"
 set -o xtrace
 aws s3 cp test.txt "${s3_object_uri}" --storage-class 'STANDARD'
-set +o xtrace
-
-printf '\n'
-printf '\n'
-printf '==============================================================================\n'
-printf 'T09 Overwrite a(n) %s-class object in the bucket\n' "${s3_storage_class}"
-printf '    tagged with the permissive tag\n'
-printf '    with a STANDARD-class object, without specifying the storage class\n'
-printf '==============================================================================\n'
-printf '\n'
-set -o xtrace
 aws s3 cp test.txt "${s3_object_uri}"
 set +o xtrace
 
 printf '\n'
 printf '\n'
 printf '==============================================================================\n'
-printf 'T10 Try to disable ABAC in each of the 3 tagged buckets\n'
+printf 'T09 Try to disable ABAC in each of the 3 tagged buckets\n'
 printf '==============================================================================\n'
 for s3_bucket_name_prefix in 'tag' 'override-tag' 'both-tags'
 do
