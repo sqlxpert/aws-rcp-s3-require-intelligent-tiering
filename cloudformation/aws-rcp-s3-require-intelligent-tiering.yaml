@@ -394,25 +394,29 @@ Resources:
         # request did not include x-amz-storage-class , S3 will not supply
         # x-amz-storage-class: STANDARD before policy evaluation.
         # These substitution variables are named for their effect in the usual
-        # case, where the required storage class is other than STANDARD:
+        # case, where the required storage class parameter is not STANDARD:
         -
           ForbidDefaultStorageClassStandard: !If
             - RequireS3StorageClassStandard
-            - |-
+            - |
 
               "s3:x-amz-storage-class": "false",
             - ""
-            # StringNotEquals is true if the key is missing; skipping this
-            # "Null"..."false" check means, do Deny s3:PutObject
+            # StringNotEquals is true if the key is missing; omitting this
+            # "Null"..."false" check means: Deny s3:PutObject if the storage
+            # class header is missing from the request (STANDARD class
+            # requested by default).
 
           AllowDefaultStorageClassStandard: !If
             - RequireS3StorageClassStandard
             - ""
-            - |-
+            - |
 
               "s3:x-amz-storage-class": "false",
-            # StringNotEquals would be true if the key were missing; adding
-            # this "Null"..."false" check means, don't Deny s3:PutObject
+            # StringNotEquals would be true if the key were missing; including
+            # this "Null"..."false" check means: do not Deny s3:PutObject if
+            # the storage class header is missing from the request (STANDARD
+            # class requested by default).
 
   ScpS3BucketRestrictTagAndAbacChanges:
     Type: AWS::Organizations::Policy

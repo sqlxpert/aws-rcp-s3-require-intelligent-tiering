@@ -33,11 +33,11 @@ bucket to require Intelligent Tiering** for all new objects.
 [Attribute-based access control](https://docs.aws.amazon.com/AmazonS3/latest/userguide/buckets-tagging-enable-abac.html)
 must be enabled for the bucket.
 
-Users who forget to add...
+Users who forget to...
 
-|Addition|Command or Method|
+|Add this option, parameter or header|To this command or API call|
 |:---|:---|
-|`--storage-class INTELLIGENT_TIERING`|`aws s3 cp`<br/>`aws s3api put-object`|
+|`--storage-class 'INTELLIGENT_TIERING'`|`aws s3 cp`<br/>`aws s3api put-object`|
 |`StorageClass="INTELLIGENT_TIERING"`|`client("s3").put_object()` in boto3<br/>or the equivalent in other AWS SDKs|
 |`x-amz-storage-class: INTELLIGENT_TIERING`|`PutObject`|
 
@@ -76,10 +76,10 @@ overrides.** ABAC must be enabled for the bucket.
 `cost-s3-override-storage-class-intelligent-tiering` **&larr; Tag an object to
 create it in a different storage class.**
 
-|Command or Method|Additions|
+|Command or API method|Options, parameters or headers to add|
 |:---|:---|
 |`aws s3api put-object`|`--tagging 'cost-s3-override-storage-class-intelligent-tiering='`|
-||`--storage-class STANDARD`|
+||`--storage-class 'STANDARD'`|
 |`client("s3").put_object()`<br/>or equivalent|`Tagging="cost-s3-override-storage-class-intelligent-tiering="`|
 ||`StorageClass="STANDARD"`|
 |`PutObject`|`x-amz-tagging: cost-s3-override-storage-class-intelligent-tiering=`|
@@ -252,7 +252,7 @@ features introduced in 2024 and 2025.
 
  4. If you're an advanced user, see
     [Testing](#testing),
-    below, for test scripts. After testing, return to Step&nbsp;10.
+    below, for the resource control policy test script.
 
     Otherwise, continue for manual testing...
 
@@ -262,10 +262,10 @@ features introduced in 2024 and 2025.
     with full S3 permissions.
 
  6. [Create](https://console.aws.amazon.com/s3/bucket/create)
-    3&nbsp;"general purpose" S3 buckets, tagging them as you create them.
-    (Under "Tags - optional", click "Add new tag".)
+    3&nbsp;"general purpose" S3 buckets. During creation, tag each bucket as
+    indicated. Under "Tags - optional", click "Add new tag".
 
-    ||Bucket tags|
+    ||Bucket tag|
     |:---:|:---|
     |1|_No bucket tag_|
     |2|`cost-s3-require-storage-class-intelligent-tiering`|
@@ -277,16 +277,16 @@ features introduced in 2024 and 2025.
     "Bucket ABAC". Click "Edit" and **enable ABAC. The RCP won't work unless
     ABAC is enabled for the bucket**.
 
- 8. Try to create 3&nbsp;objects in each of the 3&nbsp;buckets. Combinations
-    marked &cross; should produce "AccessDenied".
+ 8. Try to create 3&nbsp;objects in each of the 3&nbsp;buckets. During
+    creation, tag the objects as indicated.
 
     ||**Step&nbsp;8: Create objects in these classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
     |:---:|:---|:---:|:---:|:---:|
-    ||**Step&nbsp;8: Tag the objects &rarr;**|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
-    ||**&darr; Bucket tags from Step&nbsp;6**||||
+    ||**Step&nbsp;8: During creation, tag the objects &rarr;**|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
+    ||**&darr; Bucket tag (from Step&nbsp;6**)|**Expect &darr;**|**Expect &darr;**|**Expect &darr;**|
     |1|_No bucket tag_|&check;|&check;|&check;|
-    |2|`cost-s3-require-storage-class-intelligent-tiering`|&cross;|&check;|&cross;|
-    |3|`cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`|&cross;|&check;|&check;|
+    |2|`cost-s3-require-storage-class-intelligent-tiering`|AccessDenied|&check;|AccessDenied|
+    |3|`cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`|AccessDenied|&check;|&check;|
 
     You do not need to install or use the AWS command-line interface to test.
     You can create objects in the AWS Console by selecting an S3 bucket and
@@ -298,10 +298,11 @@ features introduced in 2024 and 2025.
 
     <br/>
 
-    Try
-    [AWS CloudShell](https://console.aws.amazon.com/cloudshell/home)!
-    The AWS CLI is pre-installed and there is no need to obtain credentials
-    locally.
+    I recommend using
+    [AWS CloudShell](https://console.aws.amazon.com/cloudshell/home).
+    The AWS CLI is pre-installed, AWS keeps it up-to-date for you, and there is
+    no need to obtain AWS credentials, whether long- or hopefully short-lived,
+    on your local computer.
 
     ```shell
     cd /tmp
@@ -331,8 +332,8 @@ features introduced in 2024 and 2025.
 
  9. Delete the test buckets.
 
-10. Add other AWS account numbers, `ou-` organizational unit IDs, or the `r-`
-    root ID to apply the RCP broadly.
+10. <a id="install-step-10"></a>Add other AWS account numbers, `ou-`
+    organizational unit IDs, or the `r-` root ID to apply the RCP broadly.
 
 ## Advanced Topics
 
@@ -567,8 +568,11 @@ The test scripts assume that you have already run:
   or
   [`aws sso login`](https://docs.aws.amazon.com/signin/latest/userguide/command-line-sign-in.html#command-line-sign-in-sso)
 
-[AWS CloudShell](https://docs.aws.amazon.com/cloudshell/latest/userguide/welcome.html)
-is a secure and convenient alternative.
+I recommend using
+[AWS CloudShell](https://console.aws.amazon.com/cloudshell/home)
+as an alternative. The AWS CLI is pre-installed, AWS keeps it up-to-date for
+you, and there is no need to obtain AWS credentials, whether long- or hopefully
+short-lived, on your local computer.
 
 The IAM role you use for each test must:
 
@@ -610,6 +614,10 @@ git clone --branch 'v1.1.0' --depth 1 --config 'advice.detachedHead=false' \
 cd aws-rcp-s3-require-intelligent-tiering/test
 ./00test-rcp-s3-require-intelligent-tiering.bash
 ```
+
+After testing, return to
+[Step&nbsp;10](#install-step-10)
+of the installation instructions.
 
 </details>
 

@@ -53,7 +53,7 @@ delete_scratch_s3_bucket_and_exit() {
   printf 'Delete the scratch S3 bucket...\n'
   printf '==============================================================================\n'
   printf '\n'
-  delete_s3_bucket "s3://${s3_bucket_name_prefix}-scratch"
+  delete_s3_bucket "s3://scratch-${s3_bucket_name_suffix}"
   exit 1
 }
 
@@ -66,10 +66,10 @@ delete_test_s3_buckets_and_exit() {
   printf '==============================================================================\n'
   printf 'Delete the 4 test buckets...\n'
   printf '==============================================================================\n'
-  for s3_bucket_name_suffix in 'no-tags' 'tag' 'override-tag' 'both-tags'
+  for s3_bucket_name_prefix in 'no-tags' 'tag' 'override-tag' 'both-tags'
   do
     printf '\n'
-    delete_s3_bucket "s3://${s3_bucket_name_prefix}-${s3_bucket_name_suffix}"
+    delete_s3_bucket "s3://${s3_bucket_name_suffix}-${s3_bucket_name_prefix}"
   done
   exit 1
 }
@@ -99,9 +99,9 @@ aws_account_id=$( aws sts get-caller-identity --query 'Account' --output text )
 printf  'Caller ARN                     : %s\n' \
   "$( aws sts get-caller-identity --query 'Arn' --output text )"
 
-read -p 'Unique S3 bucket name prefix   : ' \
+read -p 'Unique S3 bucket name suffix   : ' \
   -e -i "deletable-ts-${timestamp}-${aws_account_id}-${AWS_REGION:?'Set this first'}-an" \
-  -r s3_bucket_name_prefix
+  -r s3_bucket_name_suffix
 
 read -p 'S3 storage class (not STANDARD): ' \
   -e -i 'INTELLIGENT_TIERING' \
@@ -132,7 +132,7 @@ printf '   then delete the bucket\n'
 printf '==============================================================================\n'
 printf '\n'
 
-s3_bucket_name="${s3_bucket_name_prefix}-scratch"
+s3_bucket_name="scratch-${s3_bucket_name_suffix}"
 s3_bucket_uri="s3://${s3_bucket_name}"
 s3_object_key='standard.txt'
 s3_object_uri="${s3_bucket_uri}/${s3_object_key}"
@@ -199,7 +199,7 @@ printf '========================================================================
 printf '\n'
 set -o xtrace
 aws s3api create-bucket \
-  --bucket-namespace 'account-regional' --bucket "${s3_bucket_name_prefix}-no-tags" \
+  --bucket-namespace 'account-regional' --bucket "no-tags-${s3_bucket_name_suffix}" \
   --create-bucket-configuration "LocationConstraint=${AWS_REGION}" \
   --query 'BucketArn' --output text
 set +o xtrace
@@ -213,19 +213,19 @@ printf '\n'
 set -o xtrace
 
 aws s3api create-bucket \
-  --bucket-namespace 'account-regional' --bucket "${s3_bucket_name_prefix}-tag" \
+  --bucket-namespace 'account-regional' --bucket "tag-${s3_bucket_name_suffix}" \
   --create-bucket-configuration \
   "LocationConstraint=${AWS_REGION},Tags=[{Key=${s3_bucket_tag_key_strict},Value=,}]" \
   --query 'BucketArn' --output text
 
 aws s3api create-bucket \
-  --bucket-namespace 'account-regional' --bucket "${s3_bucket_name_prefix}-override-tag" \
+  --bucket-namespace 'account-regional' --bucket "override-tag-${s3_bucket_name_suffix}" \
   --create-bucket-configuration \
   "LocationConstraint=${AWS_REGION},Tags=[{Key=${s3_bucket_tag_key_permissive},Value=,}]" \
   --query 'BucketArn' --output text
 
 aws s3api create-bucket \
-  --bucket-namespace 'account-regional' --bucket "${s3_bucket_name_prefix}-both-tags" \
+  --bucket-namespace 'account-regional' --bucket "both-tags-${s3_bucket_name_suffix}" \
   --create-bucket-configuration \
   "LocationConstraint=${AWS_REGION},Tags=[{Key=${s3_bucket_tag_key_strict},Value=,},{Key=${s3_bucket_tag_key_permissive},Value=,}]" \
   --query 'BucketArn' --output text
@@ -237,7 +237,7 @@ printf '\n'
 printf '==============================================================================\n'
 printf 'S5 Enable attribute-based access control for the 4 buckets\n'
 printf '==============================================================================\n'
-for s3_bucket_name_suffix in 'no-tags' 'tag' 'override-tag' 'both-tags'
+for s3_bucket_name_prefix in 'no-tags' 'tag' 'override-tag' 'both-tags'
 do
   s3_bucket_name="${s3_bucket_name_prefix}-${s3_bucket_name_suffix}"
   printf '\n'
@@ -259,7 +259,7 @@ printf '========================================================================
 printf 'T01 Create and delete a default-class object in the no-tags bucket\n'
 printf '==============================================================================\n'
 printf '\n'
-s3_object_uri="s3://${s3_bucket_name_prefix}-no-tags/standard.txt"
+s3_object_uri="s3://no-tags-${s3_bucket_name_suffix}/standard.txt"
 set -o xtrace
 aws s3 cp test.txt "${s3_object_uri}"
 aws s3 rm "${s3_object_uri}"
@@ -282,7 +282,7 @@ printf '========================================================================
 printf 'T03 Create and delete a(n) %s-class object in each of the 4 buckets\n' \
   "${s3_storage_class}"
 printf '==============================================================================\n'
-for s3_bucket_name_suffix in 'no-tags' 'tag' 'override-tag' 'both-tags'
+for s3_bucket_name_prefix in 'no-tags' 'tag' 'override-tag' 'both-tags'
 do
   s3_object_uri="s3://${s3_bucket_name_prefix}-${s3_bucket_name_suffix}/other.txt"
   printf '\n'
@@ -299,7 +299,7 @@ printf 'T04 Create, overwrite and delete a STANDARD-class object with the overri
 printf '    in the bucket tagged with the permissive tag\n'
 printf '    and the bucket tagged with both the strict and permissive tags\n'
 printf '==============================================================================\n'
-for s3_bucket_name_suffix in 'override-tag' 'both-tags'
+for s3_bucket_name_prefix in 'override-tag' 'both-tags'
 do
   s3_bucket_name="${s3_bucket_name_prefix}-${s3_bucket_name_suffix}"
   s3_object_key='standard.txt'
@@ -323,7 +323,7 @@ printf '\n'
 printf '==============================================================================\n'
 printf 'T05 Disable and then re-enable ABAC for the no-tags bucket\n'
 printf '==============================================================================\n'
-s3_bucket_name="${s3_bucket_name_prefix}-no-tags"
+s3_bucket_name="no-tags-${s3_bucket_name_suffix}"
 set -o xtrace
 aws s3api put-bucket-abac --bucket "${s3_bucket_name}" --abac-status 'Status=Disabled'
 aws s3api put-bucket-abac --bucket "${s3_bucket_name}" --abac-status 'Status=Enabled'
@@ -338,7 +338,7 @@ printf '\n'
 printf '==============================================================================\n'
 printf 'T06 Create and delete a STANDARD-class object in each of the 3 tagged buckets\n'
 printf '==============================================================================\n'
-for s3_bucket_name_suffix in 'tag' 'override-tag' 'both-tags'
+for s3_bucket_name_prefix in 'tag' 'override-tag' 'both-tags'
 do
   s3_object_uri="s3://${s3_bucket_name_prefix}-${s3_bucket_name_suffix}/standard.txt"
   printf '\n'
@@ -355,7 +355,7 @@ printf 'T07 Create and delete a STANDARD-class object with the override tag in t
 printf '    bucket tagged with the strict tag\n'
 printf '==============================================================================\n'
 printf '\n'
-s3_bucket_name="${s3_bucket_name_prefix}-tag"
+s3_bucket_name="tag-${s3_bucket_name_suffix}"
 s3_object_key='standard.txt'
 s3_object_uri="s3://${s3_bucket_name}/${s3_object_key}"
 set -o xtrace
@@ -371,10 +371,10 @@ printf '\n'
 printf '==============================================================================\n'
 printf 'T08 Overwrite a(n) %s-class object in the bucket\n' "${s3_storage_class}"
 printf '    tagged with the permissive tag\n'
-printf '    with a STANDARD-class object\n'
+printf '    with a STANDARD-class object, specifying the storage class explicitly\n'
 printf '==============================================================================\n'
 printf '\n'
-s3_bucket_name="${s3_bucket_name_prefix}-override-tag"
+s3_bucket_name="override-tag-${s3_bucket_name_suffix}"
 s3_object_key='other.txt'
 s3_object_uri="s3://${s3_bucket_name}/${s3_object_key}"
 set -o xtrace
@@ -384,9 +384,21 @@ set +o xtrace
 printf '\n'
 printf '\n'
 printf '==============================================================================\n'
-printf 'T09 Try to disable ABAC in each of the 3 tagged buckets\n'
+printf 'T09 Overwrite a(n) %s-class object in the bucket\n' "${s3_storage_class}"
+printf '    tagged with the permissive tag\n'
+printf '    with a STANDARD-class object, without specifying the storage class\n'
 printf '==============================================================================\n'
-for s3_bucket_name_suffix in 'tag' 'override-tag' 'both-tags'
+printf '\n'
+set -o xtrace
+aws s3 cp test.txt "${s3_object_uri}"
+set +o xtrace
+
+printf '\n'
+printf '\n'
+printf '==============================================================================\n'
+printf 'T10 Try to disable ABAC in each of the 3 tagged buckets\n'
+printf '==============================================================================\n'
+for s3_bucket_name_prefix in 'tag' 'override-tag' 'both-tags'
 do
   s3_bucket_name="${s3_bucket_name_prefix}-${s3_bucket_name_suffix}"
   printf '\n'

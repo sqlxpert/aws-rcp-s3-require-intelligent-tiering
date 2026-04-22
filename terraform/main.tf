@@ -4,6 +4,23 @@
 
 
 
+locals {
+  require_standard_storage_class = (var.require_s3_storage_class == "STANDARD")
+  header_present                 = "\n\"s3:x-amz-storage-class\": \"false\","
+  header_possibly_present        = ""
+
+  forbid_default_storage_class_standard = (
+    local.require_standard_storage_class
+    ? local.header_present
+    : local.header_possibly_present
+  )
+  allow_default_storage_class_standard = (
+    local.require_standard_storage_class
+    ? local.header_possibly_present
+    : local.header_present
+  )
+}
+
 resource "aws_organizations_policy" "rcp_s3_bucket_require_storage_class" {
   type        = "RESOURCE_CONTROL_POLICY"
   name        = "S3BucketRequireStorageClass-${var.rcp_scp_name_suffix}"
@@ -26,7 +43,7 @@ resource "aws_organizations_policy" "rcp_s3_bucket_require_storage_class" {
           "Action": "s3:PutObject",
           "Resource": "*",
           "Condition": {
-            "Null": {
+            "Null": {${local.forbid_default_storage_class_standard}
               "s3:BucketTag/${var.s3_bucket_tag_key_strict}": "false",
               "s3:BucketTag/${var.s3_bucket_tag_key_permissive}": "true"
             },
@@ -42,7 +59,7 @@ resource "aws_organizations_policy" "rcp_s3_bucket_require_storage_class" {
           "Action": "s3:PutObject",
           "Resource": "*",
           "Condition": {
-            "Null": {
+            "Null": {${local.allow_default_storage_class_standard}
               "s3:BucketTag/${var.s3_bucket_tag_key_permissive}": "false"
             },
             "StringNotEquals": {
