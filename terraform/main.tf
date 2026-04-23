@@ -5,19 +5,10 @@
 
 
 locals {
-  require_standard_storage_class = (var.require_s3_storage_class == "STANDARD")
-  header_present                 = "\n\"s3:x-amz-storage-class\": \"false\","
-  header_possibly_present        = ""
-
-  forbid_default_storage_class_standard = (
-    local.require_standard_storage_class
-    ? local.header_present
-    : local.header_possibly_present
-  )
-  allow_default_storage_class_standard = (
-    local.require_standard_storage_class
-    ? local.header_possibly_present
-    : local.header_present
+  allow_implicit_standard_storage_class = (
+    (var.require_s3_storage_class == "STANDARD")
+    ? "\n\"s3:x-amz-storage-class\": \"false\","
+    : ""
   )
 }
 
@@ -43,7 +34,7 @@ resource "aws_organizations_policy" "rcp_s3_bucket_require_storage_class" {
           "Action": "s3:PutObject",
           "Resource": "*",
           "Condition": {
-            "Null": {${local.forbid_default_storage_class_standard}
+            "Null": {${local.allow_implicit_standard_storage_class}
               "s3:BucketTag/${var.s3_bucket_tag_key_strict}": "false",
               "s3:BucketTag/${var.s3_bucket_tag_key_permissive}": "true"
             },
@@ -59,7 +50,7 @@ resource "aws_organizations_policy" "rcp_s3_bucket_require_storage_class" {
           "Action": "s3:PutObject",
           "Resource": "*",
           "Condition": {
-            "Null": {${local.allow_default_storage_class_standard}
+            "Null": {${local.allow_implicit_standard_storage_class}
               "s3:BucketTag/${var.s3_bucket_tag_key_permissive}": "false"
             },
             "StringNotEquals": {
@@ -73,7 +64,7 @@ resource "aws_organizations_policy" "rcp_s3_bucket_require_storage_class" {
         {
           "Sid": "S3BucketForbidConfusingObjectTag",
           "Effect": "Deny",
-          "Principal": "*",
+          "Principal": "arn:${local.partition}:s3:::*",
           "Action": "s3:TagResource",
           "Resource": "*",
           "Condition": {
@@ -159,7 +150,7 @@ resource "aws_organizations_policy" "scp_s3_bucket_restrict_tag_and_abac_changes
             "s3:TagResource",
             "s3:UntagResource"
           ],
-          "Resource": "*",
+          "Resource": "arn:${local.partition}:s3:::*",
           "Condition": {
             ${var.scp_principal_condition}${local.comma_after_scp_principal_condition}
             "ForAnyValue:StringEquals": {

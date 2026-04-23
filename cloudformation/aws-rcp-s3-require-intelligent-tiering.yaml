@@ -163,7 +163,7 @@ Parameters:
       tags or enable/disable ABAC, for buckets in AWS accounts subject to the
       SCP. Separate multiple expressions with commas.
       The default,
-      '"ArnNotLike": { "aws:PrincipalArn": "arn:aws:iam::*:role/manage-s3" }',
+      '"ArnNotLike": { "aws:PrincipalArn": [ "arn:aws:iam::*:role/manage-s3" ] }',
       means that a request to change ABAC or the designated tags will be denied
       if it is not made by the manage-s3 role. (Separately, you would have to
       create the manage-s3 role and attach an IAM policy allowing the role to
@@ -175,7 +175,7 @@ Parameters:
       https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html
       . For condition keys, see
       https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-principal-properties
-    Default: '"ArnNotLike": { "aws:PrincipalArn": "arn:aws:iam::*:role/manage-s3" }'
+    Default: '"ArnNotLike": { "aws:PrincipalArn": [ "arn:aws:iam::*:role/manage-s3" ] }'
     AllowedPattern: '^(?!.*"ForAnyValue:StringEquals").*$'
     ConstraintDescription: >-
       "ForAnyValue:StringEquals" is forbidden. To use this condition operator,
@@ -325,7 +325,7 @@ Resources:
                 "Action": "s3:PutObject",
                 "Resource": "*",
                 "Condition": {
-                  "Null": {${ForbidDefaultStorageClassStandard}
+                  "Null": {${AllowImplicitStandardStorageClass}
                     "s3:BucketTag/${S3BucketTagKeyStrict}": "false",
                     "s3:BucketTag/${S3BucketTagKeyPermissive}": "true"
                   },
@@ -341,7 +341,7 @@ Resources:
                 "Action": "s3:PutObject",
                 "Resource": "*",
                 "Condition": {
-                  "Null": {${AllowDefaultStorageClassStandard}
+                  "Null": {${AllowImplicitStandardStorageClass}
                     "s3:BucketTag/${S3BucketTagKeyPermissive}": "false"
                   },
                   "StringNotEquals": {
@@ -390,33 +390,25 @@ Resources:
               }
             ]
           }
-        # STANDARD is the default storage class for s3:PutObject , but if the
-        # request did not include x-amz-storage-class , S3 will not supply
-        # x-amz-storage-class: STANDARD before policy evaluation.
-        # These substitution variables are named for their effect in the usual
-        # case, where the required storage class parameter is not STANDARD:
-        -
-          ForbidDefaultStorageClassStandard: !If
+        # If the x-amz-storage-class header was not in the PutObject request,
+        # S3 will not supply "x-amz-storage-class: STANDARD" before policy
+        # evaluation.
+        #
+        # The StringNotEquals operator returns true if the condition key is
+        # missing.
+        #
+        # If the required storage class is STANDARD and there was no storage
+        # class header in the PutObject request (STANDARD, implicitly), do not
+        # Deny the request. Continue evaluating conditions only if there was an
+        # explicit storage class in the request.
+        #
+        - AllowImplicitStandardStorageClass: !If
             - RequireS3StorageClassStandard
             - |
 
-              "s3:x-amz-storage-class": "false",
+                "s3:x-amz-storage-class": "false",
             - ""
-            # StringNotEquals is true if the key is missing; omitting this
-            # "Null"..."false" check means: Deny s3:PutObject if the storage
-            # class header is missing from the request (STANDARD class
-            # requested by default).
 
-          AllowDefaultStorageClassStandard: !If
-            - RequireS3StorageClassStandard
-            - ""
-            - |
-
-              "s3:x-amz-storage-class": "false",
-            # StringNotEquals would be true if the key were missing; including
-            # this "Null"..."false" check means: do not Deny s3:PutObject if
-            # the storage class header is missing from the request (STANDARD
-            # class requested by default).
 
   ScpS3BucketRestrictTagAndAbacChanges:
     Type: AWS::Organizations::Policy
@@ -466,7 +458,7 @@ Resources:
                   "s3:TagResource",
                   "s3:UntagResource"
                 ],
-                "Resource": "*",
+                "Resource": "arn:${AWS::Partition}:s3:::*",
                 "Condition": {
                   ${ScpPrincipalCondition}${CommaAfterScpPrincipalCondition}
                   "ForAnyValue:StringEquals": {
