@@ -281,10 +281,10 @@ features introduced in 2024 and 2025.
  8. Try to create 3&nbsp;objects in each of the 3&nbsp;buckets. During
     creation, tag the objects as indicated.
 
-    ||**Step&nbsp;8: Create objects in these classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
+    ||**Create objects in these classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
     |:---:|:---|:---:|:---:|:---:|
-    ||**Step&nbsp;8: During creation, tag the objects &rarr;**|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
-    ||**&darr; Bucket tag (from Step&nbsp;6**)|**Expect &darr;**|**Expect &darr;**|**Expect &darr;**|
+    ||**During creation, tag the objects &rarr;**|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
+    ||**Bucket tag**|**Result<br/>&darr;**|**Result<br/>&darr;**|**Result<br/>&darr;**|
     |1|_No bucket tag_|&check;|&check;|&check;|
     |2|`cost-s3-require-storage-class-intelligent-tiering`|AccessDenied|&check;|AccessDenied|
     |3|`cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`|AccessDenied|&check;|&check;|
