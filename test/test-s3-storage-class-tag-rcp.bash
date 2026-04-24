@@ -5,7 +5,7 @@
 # GPLv3, Copyright Paul Marcelin
 
 # RCP TESTS
-# github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering/blob/main/README.md#resource-control-policy-test
+# github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering/blob/main/README.md#resource-control-policy-test-script
 
 
 
