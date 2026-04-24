@@ -1,8 +1,8 @@
 # Tag to Require S3 Intelligent Tiering
 
 Still relying on lifecycle policies to transition S3 objects to Intelligent
-Tiering after the fact? You're wasting money! Set the storage class in scripts
-or code to avoid a transition charge and start the
+Tiering? You're wasting money! Set the storage class in scripts or code to
+avoid a transition charge and start the
 [savings countdown](https://aws.amazon.com/blogs/aws/amazon-s3-glacier-is-the-best-place-to-archive-your-data-introducing-the-s3-glacier-instant-retrieval-storage-class/#:~:text=No%20tiering%20charges%20apply,S3%20Intelligent%2DTiering%20storage%20class.)
 the moment you create each object.
 
@@ -37,7 +37,7 @@ Users who forget to...
 
 |Add this option, parameter or header|To this command or API call|
 |:---|:---|
-|`--storage-class 'INTELLIGENT_TIERING'`|`aws s3 cp`<br/>`aws s3api put-object`|
+|`--storage-class 'INTELLIGENT_TIERING'`|`aws s3 cp` or<br/>`aws s3api put-object`|
 |`StorageClass="INTELLIGENT_TIERING"`|`client("s3").put_object()` in boto3<br/>or the equivalent in other AWS SDKs|
 |`x-amz-storage-class: INTELLIGENT_TIERING`|`PutObject`|
 
@@ -86,7 +86,8 @@ create it in a different storage class.**
 ||`x-amz-storage-class: STANDARD`|
 
 - Change `STANDARD` to the storage class of your choice.
-- If `STANDARD` _is_ your choice, you can omit the storage class.
+- If `STANDARD` _is_ your choice, you can omit the storage class option,
+  parameter, or header.
 - Encode `=` as `%3D` in the `PutObject` header value, if your HTTP library
   doesn't.
 - ~`aws s3 cp`~ does not support setting S3 object tags.
@@ -552,14 +553,14 @@ know the consequences!
 
 ## Testing
 
-### Test Setup
+### Resource Control Policy Test
 
-<details>
-  <summary>Choose a role and authenticate...</summary>
+<details name="test-scope">
+  <summary>Test the RCP...</summary>
 
 <br/>
 
-The test scripts assume that you have already run:
+The test script assumes that you have already run:
 
 - [`aws configure`](https://docs.aws.amazon.com/cli/latest/reference/configure)
   or
@@ -574,11 +575,14 @@ as an alternative. The AWS CLI is pre-installed, AWS keeps it up-to-date for
 you, and there is no need to obtain AWS credentials, whether long- or hopefully
 short-lived, on your local computer.
 
-The IAM role you use for each test must:
+The IAM role you use must:
 
 - _not_ be in the AWS&nbsp;Organizations management account (RCPs do not apply
-  to resources, such as S3 buckets, in the management account. SCPs do not
-  apply to roles or other IAM principals in the management account.)
+  to resources, such as S3 buckets, in the management account.)
+- be in an AWS account subject to the **resource** control policy
+- _not_ be in an account subject to the optional **service** control policy (If
+  the **S**CP applies, then you must use an exempt role. See
+  `ScpPrincipalCondition` / `scp_principal_condition`&nbsp;.)
 - have permission to:
   - create, tag, and delete S3 buckets
   - enable and disable attribute-based access control: `s3:PutBucketAbac`
@@ -586,24 +590,6 @@ The IAM role you use for each test must:
 
 The test scripts also call `sts:GetCallerIdentity`&nbsp;, which requires no
 explicit permission.
-
-</details>
-
-### Resource Control Policy Test
-
-<details name="test-scope">
-  <summary>Test the RCP...</summary>
-
-<br/>
-
-In addition to the requirements in
-[Test Setup](#test-setup),
-above, the role you use for testing the **R**CP must:
-
-- be in an AWS account subject to the **resource** control policy
-- _not_ be in an account subject to the optional **service** control policy (If
-  the **S**CP applies, then you must use an exempt role. See
-  `ScpPrincipalCondition` / `scp_principal_condition`&nbsp;.)
 
 Test the RCP by running:
 
@@ -628,106 +614,96 @@ of the installation instructions.
 
 <br/>
 
-Testing the **S**CP requires two roles, one role that is exempt from the SCP
-and another that is subject to it. Both roles must be in the same AWS account,
-and they must meet the requirements in
-[Test Setup](#test-setup),
-above. Because the test process requires switching back and forth, steps below
-that require the exempt role are marked _(SCP-exempt role)_.
+ 1. Choose an AWS account number for testing. The AWS account must be **subject
+    to the RCP and the SCP.** (RCPs never affect resources in your
+    AWS&nbsp;Organizations management account.)
 
-The SCP test scripts default to using the AWS account number and the UTC date
-to generate a unique S3 bucket name prefix. Because the scripts might be
-executed in different environments, no information is passed between them. If
-you complete SCP testing within the same UTC day, you will not have to enter a
-non-default value when each script prompts you for the bucket name prefix.
+ 2. Before creating the **S**CP test CloudFormation stack, temporarily detach
+    the **S**CP from the AWS account in which the stack will be created. Make
+    this change in your AWS&nbsp;Organizations management account.
 
-To test the SCP,
+ 3. Authenticate to the AWS Console, in the test AWS account. Choose a role
+    with full S3 permissions.
 
- 1. Assume the role that is exempt from the SCP.
- 2. _(SCP-exempt role)_ Clone the repository and create the test S3 buckets.
+ 4. [Create a CloudFormation stack](https://console.aws.amazon.com/cloudformation/home?#/stacks/create)
+    from
+    [test/test-scp-protect-s3-storage-class-tag.yaml](/../../blob/v1.1.0/test/test-scp-protect-s3-storage-class-tag.yaml?raw=true)&nbsp;.
 
-    ```shell
-    cd /tmp
-    git clone --branch 'v1.1.0' --depth 1 --config 'advice.detachedHead=false' \
-      'https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git'
-    cd aws-rcp-s3-require-intelligent-tiering/test
-    ./10test-scp-s3-bucket-restrict-tag-and-abac-changes.bash
-    ```
+    - Copy and paste the **suggested stack name. Do not change it.** Creating
+      more than one stack from this template is not supported.
+    - Because this is for temporary use during testing, I do not provide a
+      Terraform alternative.
+    - Trouble creating the stack usually signals a local permissions problem,
+      such as insufficient permissions attached to your IAM role, or the effect
+      of a hidden policy such as a permissions boundary or a service control
+      policy. For example, make sure that the AWS account number is not subject
+      to the optional SCP, or that your role is exempt from the SCP. If you
+      cannot resolve the problem, check with your local AWS administrator.
 
- 3. Assume the role that is subject to the SCP.
- 4. If you are using CloudShell, clone the repository in the new file system.
+ 5. Optional: If you are an advanced user, you can re-attach the **S**CP after
+    creating the SCP test CloudFormation stack but before testing. For the
+    first round of testing, exempt
+    `TestScpProtectS3StorageClassTag-TesterLambdaFnRole` from the SCP by
+    customizing `ScpPrincipalCondition` / `scp_principal_condition` in the main
+    CloudFormation stack or Terraform module. Make these changes in your
+    AWS&nbsp;Organizations management account.
 
-    ```shell
-    cd /tmp
-    git clone --branch 'v1.1.0' --depth 1 --config 'advice.detachedHead=false' \
-      'https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git'
-    cd aws-rcp-s3-require-intelligent-tiering/test
-    ```
+ 6. Open the
+    [TestDirector](https://console.aws.amazon.com/lambda/home#/functions/TestScpProtectS3StorageClassTagTestDirector?tab=testing)
+    Lambda function's "Test" tab and click the orange "Test" button.
 
- 5. Confirm that you cannot enable ABAC on a bucket. The first test should
-    produce an error, and the script should exit.
+    - The "Event JSON" value will be ignored.
 
-    ```shell
-    ./12test-scp-s3-bucket-restrict-tag-and-abac-changes.bash
-    ```
+ 7. Open the "All events" search page for the
+    [Test](https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups/log-group/TestScpProtectS3StorageClassTag/log-events)
+    CloudWatch log group, and filter for `error`&nbsp;. Review any errors.
 
- 6. Assume the role that is exempt from the SCP.
- 7. _(SCP-exempt role)_ Enable ABAC for the test buckets.
+    - Uncaught exceptions are unexpected, and usually signal local permission
+      problems.
+    - Service control policy tests cover a set of 4 numbered S3 buckets with
+      various ABAC and bucket tag combinations. Each test result is a JSON
+      object.
+    - Useful
+      [CloudWatch Logs filter patterns](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html#matching-terms-events):
 
-    ```shell
-    ./12test-scp-s3-bucket-restrict-tag-and-abac-changes.bash
-    ```
+      |Filter Pattern|Scope|
+      |:---:|:---|
+      |`error`|All errors|
+      |`timeout`|Lambda function timeouts (unlikely)|
+      |`%TEST-\d+%`|All tests|
+      |`"TEST-3."`|Tests on S3 bucket&nbsp;3 (for example)|
+      |`%TEST-\d+\.[0-4]%`|Tests that tag buckets|
+      |`%TEST-\d+\.[5-7]%`|Tests that change the ABAC setting|
 
- 8. Assume the role that is subject to the SCP.
+ 8. To prepare to re-test, open the list of log streams in the
+    [Test](https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups/log-group/TestRcpS3EncryptionTag)
+    log group, check the topmost checkbox to select all of the log streams,
+    then click "Delete".
 
- 9. Confirm that you cannot disable ABAC on a bucket. The first test should
-    produce an error, and the script should exit.
+    - If there were timeouts or errors, check the
+      [Test](https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups/log-group/TestScpProtectS3StorageClassTag)
+      CloudFormation stack for drift and correct any drift before re-testing
+      ("Stack actions" &rarr; "Detect drift", then "Stack actions" &rarr;
+      "View drift results").
 
-    ```shell
-    ./14test-scp-s3-bucket-restrict-tag-and-abac-changes.bash
-    ```
+ 9. After testing _without_ the SCP, you must re-test _with_ the SCP.
 
-10. In the list of
-    [buckets](https://console.aws.amazon.com/s3/buckets),
-    select the first test bucket. The test bucket name prefix is of the form:
-    deletable-acct-_112233445566_-dt-_YYYY-MM-DD_ and the first test
-    bucket's name ends in:
+10. Re-attach the **S**CP to the AWS account containing the CloudFormation
+    stack. (Advanced users, revert to the default `ScpPrincipalCondition` /
+    `scp_principal_condition` value, in the main CloudFormation stack or
+    Terraform module.) Make this change in your AWS&nbsp;Organizations
+    management account.
 
-    - `-no-tags`
+11. Update the SCP test CloudFormation stack, changing `ScpOn` to `true`&nbsp;.
 
-    Open the "Properties" tab and scroll down to "Tags".
+12. Return to Step&nbsp;3 of these SCP testing instructions.
 
-11. Try to add any tags not already present:
+13. When you are finished, delete the
+    [Test](https://console.aws.amazon.com/cloudformation/home#/stacks?filteringText=TestScpProtectS3StorageClassTag&filteringStatus=active&viewNested=true)
+    CloudFormation stack.
 
-    - `cost-s3-require-storage-class-intelligent-tiering`
-    - `cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`
-
-    Each attempt should produce an error.
-
-12. Try to add an arbitrary tag. This should succeed.
-
-13. Try to delete the arbitrary tag. This should succeed.
-
-14. Try to delete one of these tags, if it is present:
-
-    - `cost-s3-require-storage-class-intelligent-tiering`
-    - `cost-s3-require-storage-class-intelligent-tiering-override-with-object-tag`
-
-    This should produce an error.
-
-15. Repeat Step&nbsp;10 through Step&nbsp;14 for the remaining test buckets.
-    Their names end in:
-
-    - `-tag`
-    - `-override-tag`
-    - `-both-tags`
-
-16. Assume the role that is exempt from the SCP.
-17. _(SCP-exempt role)_ Delete the test buckets.
-
-    ```shell
-    ./18test-scp-s3-bucket-restrict-tag-and-abac-changes.bash
-    ```
+    - If there was an unexpected error, you might first have to delete all
+      objects from the S3 buckets listed in the stack's "Resources" tab.
 
 </details>
 
