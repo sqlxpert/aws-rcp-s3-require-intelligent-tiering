@@ -407,35 +407,33 @@ reserving tag key prefixes for
 and other system-level uses, you can safely delegate permission for users to
 set other tags.
 
->I'm not the only AWS security expert who favors tag key prefixes and, where
-feasible, encoding information in distinct tag keys rather than in tag values.
-See
-"[Locking down AWS principal tags with RCPs and SCPs](https://awsteele.com/blog/2026/02/21/locking-down-aws-principal-tags-with-rcps-and-scps.html#:~:text=I%20prefer%20to%20lock%20down%20a%20tag%20key,per%20%22use%20case%22)",
-_Aidan Steele's blog_, 2026-02-21.
->
->My second RCP,
-[github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering](https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering)&nbsp;,
-does keep KMS encryption key identifiers in tag values. The set of S3 storage
-class identifiers is small, and the set of worthwhile ones, even smaller. Most
-users of the present RCP will only ever need S3 bucket tag keys for
-`INTELLIGENT_TIERING`&nbsp;, `STANDARD`&nbsp;, `GLACIER_IR`&nbsp;, and
-`DEEP_ARCHIVE`&nbsp;.
-[Other S3 storage classes are of little benefit.](https://builder.aws.com/content/38nqWWauUbgfDsAzx2FpigrfAMv/intelligent-tiering-is-the-best-s3-storage-class-but-data-retrieval-is-not-free#:~:text=Heuristics)
-Encoding the storage class in the tag key removes any uncertainty on the part
-of the _end_-user about what the tag value should be. There's less need for
-documentation, which doesn't reach _end_-users anyway, or for validation and
-bifurcation, which requires
-[quite a lot of extra IAM policy JSON](https://github.com/sqlxpert/aws-rcp-s3-require-encryption-kms/blob/3261eb8/cloudformation/aws-rcp-s3-require-encryption-kms.yaml#L329-L399). Much better to create a
-second, a third, and a fourth stack from an identical CloudFormation template
-_if_ you need the functionality. Editing parameter values is far more reliable
-than the process of adding and testing IAM policy code.
-
 Watch out for automated processes, like backup systems, that try to copy all of
 a resource's tags to a new resource! Where a system automatically copies tags
 to related resources, as in the case of CloudFormation (stack tags copied to
 most stack resources) or EC2 (instance tags copied to EBS volumes and their
 snapshots), include the resource type in the tag key to make the tag's origin
 and scope unambiguous.
+
+>I'm not the only AWS security expert who favors tag key prefixes and, where
+feasible, encoding information in tag keys rather than in tag values. See
+"[Locking down AWS principal tags with RCPs and SCPs](https://awsteele.com/blog/2026/02/21/locking-down-aws-principal-tags-with-rcps-and-scps.html#:~:text=I%20prefer%20to%20lock%20down%20a%20tag%20key,per%20%22use%20case%22)",
+_Aidan Steele's blog_, 2026-02-21.
+>
+>My follow-on S3 RCP,
+[github.com/sqlxpert/**aws-rcp-s3-require-encryption-kms**](https://github.com/sqlxpert/aws-rcp-s3-require-encryption-kms)&nbsp;,
+does keep KMS encryption key identifiers in tag values, but the set of S3
+storage class strings is small, and the set of worthwhile ones, even smaller.
+Most users of the present RCP will only ever need S3 bucket tag keys for
+`INTELLIGENT_TIERING`&nbsp;, `STANDARD`&nbsp;, `GLACIER_IR`&nbsp;, and
+`DEEP_ARCHIVE`&nbsp;.
+[Other S3 storage classes are of little benefit.](https://builder.aws.com/content/38nqWWauUbgfDsAzx2FpigrfAMv/intelligent-tiering-is-the-best-s3-storage-class-but-data-retrieval-is-not-free#:~:text=Heuristics)
+Encoding the storage class in the tag key removes any uncertainty on the part
+of the end-user about what the tag value should be. There's less need for usage
+documentation, which tends not reach _end_-users anyway, or for validation and
+branching, which requires
+[quite a lot of extra IAM policy code](https://github.com/sqlxpert/aws-rcp-s3-require-encryption-kms/blob/3261eb8/cloudformation/aws-rcp-s3-require-encryption-kms.yaml#L329-L399).
+Editing parameter values and creating a second stack from the same template is
+much less error-prone than extending an IAM policy.
 
 </details>
 
