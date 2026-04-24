@@ -105,7 +105,7 @@ This CloudFormation or Terraform template is a practical solution to Cloud
 Efficiency Hub report
 [CER-0032 Delayed Transition of Objects to Intelligent-Tiering in an S3 Bucket](https://hub.pointfive.co/inefficiencies/delayed-transition-of-objects-to-intelligent-tiering-in-an-s3-bucket).
 
-Just 42&nbsp;lines of JSON (two critical statements) in a resource control
+Just 41&nbsp;lines of JSON (two critical statements) in a resource control
 policy suffice to deny `s3:PutObject` requests if the bucket has a particular
 bucket tag and the requester has not set the required storage class (or the
 required object tag, if overrides are permitted). It works thanks to AWS
@@ -281,7 +281,7 @@ features introduced in 2024 and 2025.
  8. Try to create 3&nbsp;objects in each of the 3&nbsp;buckets. During
     creation, tag the objects as indicated.
 
-    ||**Create objects in these classes &rarr;**|Standard|Intelligent&nbsp;Tiering|Standard|
+    ||Create objects in these classes &rarr;|Standard|Intelligent&nbsp;Tiering|Standard|
     |:---:|:---|:---:|:---:|:---:|
     ||**During creation, tag the objects &rarr;**|_No&nbsp;object&nbsp;tag_|_No&nbsp;object&nbsp;tag_|`cost-s3-override-storage-class-intelligent-tiering`|
     ||**Bucket tag**|**Result<br/>&darr;**|**Result<br/>&darr;**|**Result<br/>&darr;**|
@@ -342,8 +342,8 @@ features introduced in 2024 and 2025.
 
 - **Set the required storage class every time that you overwrite an object** or
   that you create a new version. If the bucket tag permits overrides and you
-  want to override the required storage class, set the object tag when you
-  overwrite an object or you create a new version.
+  want to override the required storage class, set the object tag every time
+  that you overwrite an object or that you create a new version.
 - **The permissive bucket tag wins out** over the strict bucket tag. If a
   bucket has _both_ bucket tags, users _can_ override the required storage
   class by setting the object tag. This interpretation avoids contradicting
@@ -406,6 +406,29 @@ reserving tag key prefixes for
 [attribute-based access control](https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_attribute-based-access-control.html),
 and other system-level uses, you can safely delegate permission for users to
 set other tags.
+
+>I'm not the only AWS security expert who favors tag key prefixes and, where
+feasible, encoding information in distinct tag keys rather than in tag values.
+See
+"[Locking down AWS principal tags with RCPs and SCPs](https://awsteele.com/blog/2026/02/21/locking-down-aws-principal-tags-with-rcps-and-scps.html#:~:text=I%20prefer%20to%20lock%20down%20a%20tag%20key,per%20%22use%20case%22)",
+_Aidan Steele's blog_, 2026-02-21.
+>
+>My second RCP,
+[github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering](https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering)&nbsp;,
+does keep KMS encryption key identifiers in tag values. The set of S3 storage
+class identifiers is small, and the set of worthwhile ones, even smaller. Most
+users of the present RCP will only ever need S3 bucket tag keys for
+`INTELLIGENT_TIERING`&nbsp;, `STANDARD`&nbsp;, `GLACIER_IR`&nbsp;, and
+`DEEP_ARCHIVE`&nbsp;.
+[Other S3 storage classes are of little benefit.](https://builder.aws.com/content/38nqWWauUbgfDsAzx2FpigrfAMv/intelligent-tiering-is-the-best-s3-storage-class-but-data-retrieval-is-not-free#:~:text=Heuristics)
+Encoding the storage class in the tag key removes any uncertainty on the part
+of the _end_-user about what the tag value should be. There's less need for
+documentation, which doesn't reach _end_-users anyway, or for validation and
+bifurcation, which requires
+[quite a lot of extra IAM policy JSON](https://github.com/sqlxpert/aws-rcp-s3-require-encryption-kms/blob/3261eb8/cloudformation/aws-rcp-s3-require-encryption-kms.yaml#L329-L399). Much better to create a
+second, a third, and a fourth stack from an identical CloudFormation template
+_if_ you need the functionality. Editing parameter values is far more reliable
+than the process of adding and testing IAM policy code.
 
 Watch out for automated processes, like backup systems, that try to copy all of
 a resource's tags to a new resource! Where a system automatically copies tags
