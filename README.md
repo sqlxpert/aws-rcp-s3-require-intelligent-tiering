@@ -621,7 +621,7 @@ cd /tmp
 git clone --branch 'v1.1.0' --depth 1 --config 'advice.detachedHead=false' \
   'https://github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering.git'
 cd aws-rcp-s3-require-intelligent-tiering/test
-./00test-rcp-s3-require-intelligent-tiering.bash
+./test-s3-storage-class-tag-rcp.bash
 ```
 
 After testing, return to

@@ -143,10 +143,12 @@ aws s3api create-bucket \
   --bucket-namespace 'account-regional' --bucket "${s3_bucket_name}" \
   --create-bucket-configuration "LocationConstraint=${AWS_REGION}" \
   --query 'BucketArn' --output text
+echo
 aws s3api put-object \
   --body test.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
   --storage-class 'STANDARD' --tagging "${s3_object_tag_key_override_bucket_tag}=" \
   --query 'ETag' --output text
+echo
 aws s3 rm "${s3_object_uri}"
 set +o xtrace
 trap general_error INT EXIT
@@ -288,6 +290,7 @@ do
   printf '\n'
   set -o xtrace
   aws s3 cp test.txt "${s3_object_uri}" --storage-class "${s3_storage_class}"
+  echo
   aws s3 rm "${s3_object_uri}"
   set +o xtrace
 done
@@ -306,24 +309,30 @@ do
   s3_object_key='standard.txt'
   s3_object_uri="s3://${s3_bucket_name}/${s3_object_key}"
   printf '\n'
-  set -o xtrace
   # shellcheck disable=SC2034
   for put_count in {1..2}
   do
+    set -o xtrace
     aws s3api put-object \
       --body test.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
       --storage-class 'STANDARD' \
       --tagging "${s3_object_tag_key_override_bucket_tag}=" \
       --query 'ETag' --output text
+    set +o xtrace
+    printf '\n'
   done
   # shellcheck disable=SC2034
   for put_count in {1..2}
   do
+    set -o xtrace
     aws s3api put-object \
       --body test.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
       --tagging "${s3_object_tag_key_override_bucket_tag}=" \
       --query 'ETag' --output text
+    set +o xtrace
+    printf '\n'
   done
+  set -o xtrace
   aws s3 rm "${s3_object_uri}"
   set +o xtrace
 done
@@ -336,6 +345,7 @@ printf '========================================================================
 s3_bucket_name="no-tags-${s3_bucket_name_suffix}"
 set -o xtrace
 aws s3api put-bucket-abac --bucket "${s3_bucket_name}" --abac-status 'Status=Disabled'
+echo
 aws s3api put-bucket-abac --bucket "${s3_bucket_name}" --abac-status 'Status=Enabled'
 set +o xtrace
 
@@ -355,7 +365,9 @@ do
   printf '\n'
   set -o xtrace
   aws s3 cp test.txt "${s3_object_uri}" --storage-class 'STANDARD'
+  echo
   aws s3 cp test.txt "${s3_object_uri}"
+  echo
   aws s3 rm "${s3_object_uri}"
   set +o xtrace
 done
@@ -377,10 +389,12 @@ aws s3api put-object \
   --storage-class 'STANDARD' \
   --tagging "${s3_object_tag_key_override_bucket_tag}=" \
   --query 'ETag' --output text
+echo
 aws s3api put-object \
   --body test.txt --bucket "${s3_bucket_name}" --key "${s3_object_key}" \
   --tagging "${s3_object_tag_key_override_bucket_tag}=" \
   --query 'ETag' --output text
+echo
 aws s3 rm "${s3_object_uri}"
 set +o xtrace
 
@@ -398,6 +412,7 @@ s3_object_key='other.txt'
 s3_object_uri="s3://${s3_bucket_name}/${s3_object_key}"
 set -o xtrace
 aws s3 cp test.txt "${s3_object_uri}" --storage-class 'STANDARD'
+echo
 aws s3 cp test.txt "${s3_object_uri}"
 set +o xtrace
 
