@@ -4,11 +4,22 @@
 
 
 
+locals {
+  allow_implicit_standard_storage_class = (
+    (var.require_s3_storage_class == "STANDARD")
+    ? "\n\"s3:x-amz-storage-class\": \"false\","
+    : ""
+  )
+}
+
 resource "aws_organizations_policy" "rcp_s3_bucket_require_storage_class" {
   type        = "RESOURCE_CONTROL_POLICY"
   name        = "S3BucketRequireStorageClass-${var.rcp_scp_name_suffix}"
   description = "S3 bucket with ABAC enabled, tagged '${var.s3_bucket_tag_key_strict}': Require that all objects be created in ${var.require_s3_storage_class} storage class, forbid disabling ABAC. If tagged '${var.s3_bucket_tag_key_permissive}': Override storage class by tagging an object '${var.s3_object_tag_key_override_bucket_tag}' on creation. GPLv3, Copyright Paul Marcelin. github.com/sqlxpert"
   tags        = local.rcp_scp_tags
+
+  # See comments under RcpS3BucketRequireStorageClass in
+  # ../cloudformation/aws-rcp-s3-require-intelligent-tiering.yaml
 
   # I prefer data.aws_iam_policy_document , but a HEREDOC allows source parity
   # with CloudFormation (except for variables):
@@ -23,7 +34,7 @@ resource "aws_organizations_policy" "rcp_s3_bucket_require_storage_class" {
           "Action": "s3:PutObject",
           "Resource": "*",
           "Condition": {
-            "Null": {
+            "Null": {${local.allow_implicit_standard_storage_class}
               "s3:BucketTag/${var.s3_bucket_tag_key_strict}": "false",
               "s3:BucketTag/${var.s3_bucket_tag_key_permissive}": "true"
             },
@@ -39,7 +50,7 @@ resource "aws_organizations_policy" "rcp_s3_bucket_require_storage_class" {
           "Action": "s3:PutObject",
           "Resource": "*",
           "Condition": {
-            "Null": {
+            "Null": {${local.allow_implicit_standard_storage_class}
               "s3:BucketTag/${var.s3_bucket_tag_key_permissive}": "false"
             },
             "StringNotEquals": {
@@ -55,7 +66,7 @@ resource "aws_organizations_policy" "rcp_s3_bucket_require_storage_class" {
           "Effect": "Deny",
           "Principal": "*",
           "Action": "s3:TagResource",
-          "Resource": "*",
+          "Resource": "arn:${local.partition}:s3:::*",
           "Condition": {
             "ForAnyValue:StringEquals": {
               "aws:TagKeys": "${var.s3_object_tag_key_override_bucket_tag}"
@@ -114,7 +125,7 @@ resource "aws_organizations_policy" "scp_s3_bucket_restrict_tag_and_abac_changes
   description = "S3 bucket: Matching IAM principals cannot enable/disable ABAC. If ABAC is enabled, they cannot add/change/remove '${var.s3_bucket_tag_key_strict}' or '${var.s3_bucket_tag_key_permissive}' bucket tags. GPLv3, Copyright Paul Marcelin. github.com/sqlxpert"
   tags        = local.rcp_scp_tags
 
-  # See "Semantics" comment in
+  # See comments under ScpS3BucketRestrictTagAndAbacChanges in
   # ../cloudformation/aws-rcp-s3-require-intelligent-tiering.yaml
 
   # I prefer data.aws_iam_policy_document , but a HEREDOC allows source parity
@@ -139,7 +150,7 @@ resource "aws_organizations_policy" "scp_s3_bucket_restrict_tag_and_abac_changes
             "s3:TagResource",
             "s3:UntagResource"
           ],
-          "Resource": "*",
+          "Resource": "arn:${local.partition}:s3:::*",
           "Condition": {
             ${var.scp_principal_condition}${local.comma_after_scp_principal_condition}
             "ForAnyValue:StringEquals": {

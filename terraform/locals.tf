@@ -2,7 +2,16 @@
 # github.com/sqlxpert/aws-rcp-s3-require-intelligent-tiering
 # GPLv3, Copyright Paul Marcelin
 
+data "aws_caller_identity" "current" {}
 locals {
+  caller_arn_parts = provider::aws::arn_parse(
+    data.aws_caller_identity.current.arn
+  )
+  # Provider functions added in Terraform v1.8.0
+  # arn_parse added in Terraform AWS provider v5.40.0
+
+  partition = local.caller_arn_parts["partition"]
+
   module_directory = basename(path.module)
   rcp_scp_tags = merge(
     {
