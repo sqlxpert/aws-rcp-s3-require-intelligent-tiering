@@ -22,7 +22,7 @@ Parameters:
       Whether the optional service control policy to protect S3 storage class
       tags is in effect. Before creating a CloudFormation stack from this
       template, temporarily detach the SCP from the AWS account in which you
-      will create the stack. (Make this change in you AWS Organizations
+      will create the stack. (Make this change in your AWS Organizations
       management account.) Test with the SCP off and this parameter set to
       false , then re-attach the SCP, change this parameter to true , and
       re-test.

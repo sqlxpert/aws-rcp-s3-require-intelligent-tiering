@@ -707,7 +707,7 @@ of the installation instructions.
       |`%TEST-\d+\.[5-7]%`|Tests that change the ABAC setting|
 
  8. To prepare to re-test, open the list of log streams in the
-    [Test](https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups/log-group/TestRcpS3EncryptionTag)
+    [Test](https://console.aws.amazon.com/cloudformation/home#/stacks?filteringText=TestScpProtectS3StorageClassTag&filteringStatus=active&viewNested=true)
     log group, check the topmost checkbox to select all of the log streams,
     then click "Delete".
 
