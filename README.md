@@ -619,7 +619,7 @@ The IAM role you use must:
   - enable and disable attribute-based access control: `s3:PutBucketAbac`
   - create, tag, and delete S3 _objects_
 
-The test scripts also call `sts:GetCallerIdentity`&nbsp;, which requires no
+The test script also calls `sts:GetCallerIdentity`&nbsp;, which requires no
 explicit permission.
 
 Test the RCP by running:
@@ -727,7 +727,7 @@ of the installation instructions.
 
 11. Update the SCP test CloudFormation stack, changing `ScpOn` to `true`&nbsp;.
 
-12. Return to Step&nbsp;3 of these SCP testing instructions.
+12. Return to Step&nbsp;6 of these SCP testing instructions.
 
 13. When you are finished, delete the
     [Test](https://console.aws.amazon.com/cloudformation/home#/stacks?filteringText=TestScpProtectS3StorageClassTag&filteringStatus=active&viewNested=true)
